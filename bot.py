@@ -16,7 +16,7 @@ class Offer:
         self.salary = None
         self.company_name = None
         self.description = None
-        self.contacts = None
+        self.contact_info = None
 
 
 class Summary:
@@ -37,7 +37,7 @@ channelForSummary = '@channelForSummary'
 channelForOffer = '@chennalForVacation'
 
 client = pymongo.MongoClient(
-    "mongodb+srv://admin:<password>@cluster0.b6p5p.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+    "mongodb+srv://admin:admin@cluster0.b6p5p.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
 
 db_name = 'Tel_Bot_Uzhnu'
 collection_offer = client[db_name]['Offer']
@@ -188,18 +188,18 @@ def process_description_step(message):
 
         msg = bot.reply_to(
             message, 'Введіть контактну інформацію для звізку з вами')
-        bot.register_next_step_handler(msg, process_contacts_step)
+        bot.register_next_step_handler(msg, process_contact_info_step)
 
     except Exception as e:
         bot.reply_to(message, 'Опис вакансії ')
 
 
-def process_contacts_step(message):
+def process_contact_info_step(message):
     try:
         chat_id = message.chat.id
-        contacts = message.text
+        contact_info = message.text
         offer = Offer_dict[chat_id]
-        offer.contacts = contacts
+        offer.contact_info = contact_info
 
         keyboard = types.InlineKeyboardMarkup()
         send_button = types.InlineKeyboardButton(
@@ -211,7 +211,7 @@ def process_contacts_step(message):
                                + '\n💵 ' + offer.salary
                                + '\n🏢 ' + offer.company_name
                                + '\n📋 ' + offer.description
-                               + '\n📞 ' + offer.contacts, reply_markup=keyboard)
+                               + '\n📞 ' + offer.contact_info, reply_markup=keyboard)
 
         print('sdasdas')
 
@@ -266,14 +266,14 @@ def process_fist_name_last_name_step(message):
         summary = summary_dict[chat_id]
         summary.first_name_last_name = fnlt
         msg = bot.reply_to(message, 'Введіть контактні данні')
-        bot.register_next_step_handler(msg, process_student_contacts_step)
+        bot.register_next_step_handler(msg, process_student_contact_info_step)
     except Exception as e:
         print(Exception(e))
         print(ExceptionHandler(e))
         bot.reply_to(message, 'Помилка в зчитуванні контактів...')
 
 
-def process_student_contacts_step(message):
+def process_student_contact_info_step(message):
     try:
         chat_id = message.chat.id
         contact_info = message.text
@@ -334,11 +334,22 @@ def send_to_channel(call):
                 text="Відхилити", callback_data='offer_cancel,'+str(chat_id))
 
             keyboard.add(approve, cancel)
+
+            check_connections_with_db()
+            offer_to_db = {
+                'position': offer.position,
+                'salary': offer.salary,
+                'company_name': offer.company_name,
+                'description': offer.description,
+                'contact_info': offer.contact_info,
+            }
+            # Send offer to db
+            collection_offer.insert_one(offer_to_db)
             bot.send_message(chat_id=privateChatId, text='💼 ' + offer.position
                              + '\n💵 ' + offer.salary
                              + '\n🏢 ' + offer.company_name
                              + '\n📋 ' + offer.description
-                             + '\n📞 ' + offer.contacts, reply_markup=keyboard)
+                             + '\n📞 ' + offer.contact_info, reply_markup=keyboard)
 
         elif 'offer_approve' in call.data:
             data = call.data.split(',')
@@ -363,7 +374,7 @@ def send_to_channel(call):
             #     +'\n💵 ' + offer.salary
             #     +'\n🏢 ' + offer.company_name
             #     +'\n📋 ' + offer.description
-            #     +'\n📞 ' + offer.contacts)
+            #     +'\n📞 ' + offer.contact_info)
 
         elif 'offer_cancel' in call.data:
             data = call.data.split(',')
@@ -388,6 +399,17 @@ def send_to_channel(call):
             summary = summary_dict[chat_id]
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                   text='\nПісля верифікації його можна буде переглянути в каналі\n\n' + channelForSummary)
+
+            check_connections_with_db()
+            summary_to_db = {
+                'skills': summary.skills,
+                'course': summary.course,
+                'first_name_last_name': summary.course,
+                'contact_info': summary.contact_info,
+            }
+            # Send summary to db
+            collection_summary.insert_one(summary_to_db)
+
             keyboard = types.InlineKeyboardMarkup()
             approve = types.InlineKeyboardButton(
                 text="Підтвердити", callback_data='summary_approve,'+str(chat_id))
@@ -455,11 +477,20 @@ def send_to_channel(call):
         bot.reply_to(call.message, 'Помилка відправлення в канал...')
 
 
+def check_connections_with_db():
+    try:
+        conn = client
+        print("Connected successfully!!!")
+    except:
+        pprint(traceback.format_exc())
+        print("Could not connect to MongoDB")
+
+
 # Enable saving next step handlers to file "./.handlers-saves/step.save".
 # Delay=2 means that after any change in next step handlers (e.g. calling register_next_step_handler())
 # saving will hapen after delay 2 seconds.
 # bot.enable_save_next_step_handlers(delay=2)
-
+check = check_connections_with_db()
 # Load next_step_handlers from save file (default "./.handlers-saves/step.save")
 # WARNING It will work only if enable_save_next_step_handlers was called!
 # bot.load_next_step_handlers()
