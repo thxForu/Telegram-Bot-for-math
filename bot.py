@@ -1,6 +1,6 @@
 from logging import exception
 import telebot as telebot
-from telebot import ExceptionHandler, types
+from telebot import types
 import traceback
 import pymongo
 import pprint
@@ -49,16 +49,21 @@ collection_summary = client[db_name]['Summary']
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
     try:
+        start_keyboard = types.InlineKeyboardMarkup()
+        summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
+                                                     url="https://t.me/channelForSummary")
+        offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
+                                                   url="https://t.me/chennalForVacation")
+        start_keyboard.add(summary_channel, offer_channel)
+
         bot.reply_to(message, """\
         Доброго дня це Бот для пошуку вакансій та розміщення резюме  для математиків.
-    Канал для вакансій @chennalForVacation
-    Канал для резюме @channelForSummary
-    Щоб розмістити пропозицію такі поля:
-    💼 Посада.
-    💵 Заробітна плата(якщо 0 то договірна).
-    🏢 Назва компанії.
-    📋 Більш детальний опис пропозиції.
-        """)
+Щоб розмістити пропозицію такі поля:
+💼 Посада.
+💵 Заробітна плата(якщо 0 то договірна).
+🏢 Назва компанії.
+📋 Більш детальний опис пропозиції.
+        """, reply_markup=start_keyboard)
 
         keyboard = types.InlineKeyboardMarkup()
         student_choice = types.InlineKeyboardButton(
@@ -72,17 +77,18 @@ def send_welcome(message):
                      reply_markup=keyboard)
 
     except Exception as e:
+        print(traceback.format_exc())
         print(e.with_traceback)
 
 
 def process_who_am_i(message):
     try:
-
         keyboard = types.InlineKeyboardMarkup()
         student_choice = types.InlineKeyboardButton(
             text="Студент", callback_data='student_choice')
         employer_choice = types.InlineKeyboardButton(
             text="Роботодавець", callback_data='employer_choice')
+        print(message.chat.id)
 
         keyboard.add(student_choice, employer_choice)
         bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id,
@@ -131,6 +137,7 @@ def new_offer(message):
 def process_position_step(message):
     try:
         chat_id = message.chat.id
+        print(chat_id)
         position = message.text
         offer = Offer(position)
         Offer_dict[chat_id] = offer
@@ -203,7 +210,7 @@ def process_contact_info_step(message):
 
         keyboard = types.InlineKeyboardMarkup()
         send_button = types.InlineKeyboardButton(
-            text="Опублікувати", callback_data='offer_verefication')
+            text="Верифікувати", callback_data='offer_verefication')
         keyboard.add(send_button)
 
         msg = bot.send_message(chat_id, text='Ваша пропозиція буде виглядати ось так:'
@@ -269,7 +276,6 @@ def process_fist_name_last_name_step(message):
         bot.register_next_step_handler(msg, process_student_contact_info_step)
     except Exception as e:
         print(Exception(e))
-        print(ExceptionHandler(e))
         bot.reply_to(message, 'Помилка в зчитуванні контактів...')
 
 
@@ -284,7 +290,6 @@ def process_student_contact_info_step(message):
         send_button = types.InlineKeyboardButton(
             text="Верифікувати", callback_data='summary_verefication')
         keyboard.add(send_button)
-        #pprint.pprint('chat Id in bot: '+str(chat_id))
 
         bot.send_message(chat_id, text='Ваше резюме буде виглядати ось так:'
                          + '\n\n💻 ' + summary.skills
@@ -300,17 +305,26 @@ def process_student_contact_info_step(message):
 @bot.callback_query_handler(func=lambda call: True)
 def send_to_channel(call):
     try:
-        if call.data == 'who_am_i':
+        if call.data == 'test':
+            print('test ')
+
+        elif call.data == 'who_am_i':
             chat_id = call.message.chat.id
-            msg = bot.re
-            bot.register_next_step_handler(call.message, process_who_am_i)
-            print('check')
+            keyboard = types.InlineKeyboardMarkup()
+            student_choice = types.InlineKeyboardButton(
+                text="Студент", callback_data='student_choice')
+            employer_choice = types.InlineKeyboardButton(
+                text="Роботодавець", callback_data='employer_choice')
+
+            keyboard.add(student_choice, employer_choice)
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                  text='Ви студент чи роботодавець', reply_markup=keyboard)
 
         elif call.data == 'student_choice':
             chat_id = call.message.chat.id
 
             bot.edit_message_text(
-                chat_id=chat_id, message_id=call.message.message_id, text='Ви студент чи роботодавець')
+                chat_id=chat_id, message_id=call.message.message_id, text='Ви вибрали що ви студент')
             msg = bot.reply_to(
                 call.message, 'Введіть мови програмування які ви знаєте:')
             bot.register_next_step_handler(msg, process_skills_step)
@@ -318,7 +332,7 @@ def send_to_channel(call):
         elif call.data == 'employer_choice':
             chat_id = call.message.chat.id
             bot.edit_message_text(
-                chat_id=chat_id, message_id=call.message.message_id, text='Ви студент чи роботодавець')
+                chat_id=chat_id, message_id=call.message.message_id, text='Ви вибрали що ви роботодавець')
             msg = bot.reply_to(call.message, 'Введіть будь ласка посаду:')
             bot.register_next_step_handler(msg, process_position_step)
 
@@ -337,6 +351,7 @@ def send_to_channel(call):
 
             check_connections_with_db()
             offer_to_db = {
+                'chat_id': call.message.from_user.id,
                 'position': offer.position,
                 'salary': offer.salary,
                 'company_name': offer.company_name,
@@ -361,7 +376,7 @@ def send_to_channel(call):
             student_button = types.InlineKeyboardButton(
                 text="Переглянути можливі резюме", callback_data='get_list_summary')
             employer_button = types.InlineKeyboardButton(
-                text="Нова вакансія", callback_data=''+str(chat_id))
+                text="Нова вакансія", callback_data='employer_choice')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
 
@@ -386,7 +401,7 @@ def send_to_channel(call):
             student_button = types.InlineKeyboardButton(
                 text="Переглянути можливі резюме", callback_data='get_list_summary')
             employer_button = types.InlineKeyboardButton(
-                text="Нова вакансія", callback_data=''+str(chat_id))
+                text="Нова вакансія", callback_data='employer_choice')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
             keyboard = [[choose, employer_button], [student_button]]
@@ -400,8 +415,10 @@ def send_to_channel(call):
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                   text='\nПісля верифікації його можна буде переглянути в каналі\n\n' + channelForSummary)
 
+            print(call.message.from_user.id)
             check_connections_with_db()
             summary_to_db = {
+                'chat_id': call.message.from_user.id,
                 'skills': summary.skills,
                 'course': summary.course,
                 'first_name_last_name': summary.course,
@@ -430,7 +447,7 @@ def send_to_channel(call):
             student_button = types.InlineKeyboardButton(
                 text="Переглянути можливі вакансії", callback_data='get_list_offer')
             employer_button = types.InlineKeyboardButton(
-                text="Нове резюме", callback_data=''+str(chat_id))
+                text="Нове резюме", callback_data='student_choice')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
             keyboard = [[choose, employer_button], [student_button]]
@@ -455,7 +472,7 @@ def send_to_channel(call):
             student_button = types.InlineKeyboardButton(
                 text="Переглянути можливі вакансії", callback_data='get_list_offer')
             employer_button = types.InlineKeyboardButton(
-                text="Нове резюме", callback_data=''+str(chat_id))
+                text="Нове резюме", callback_data='student_choice')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
 
@@ -465,9 +482,42 @@ def send_to_channel(call):
                 chat_id=chat_id, text='Ваше резюме відхилино!', reply_markup=reply_markup)
 
         elif call.data == 'get_list_summary':
+            chat_id = call.message.chat.id
+            for x in collection_summary.find():
+                last = bot.send_message(chat_id, text=form_for_summary_list(x))
+
+            keyboard = types.InlineKeyboardMarkup()
+            student_button = types.InlineKeyboardButton(
+                text="Переглянути можливі резюме", callback_data='get_list_summary')
+            employer_button = types.InlineKeyboardButton(
+                text="Нова вакансія", callback_data='employer_choice')
+            choose = types.InlineKeyboardButton(
+                text="Зміна перегляду", callback_data='who_am_i')
+            keyboard = [[choose, employer_button], [student_button]]
+            reply_markup = types.InlineKeyboardMarkup(keyboard)
+            bot.send_message(
+                chat_id=chat_id, text='Ось всі можливі резюме', reply_markup=reply_markup)
+
             print('Summary List')
 
         elif call.data == 'get_list_offer':
+            chat_id = call.message.chat.id
+            for x in collection_offer.find():
+                last = bot.send_message(chat_id, text=form_for_offer_list(x))
+
+            keyboard = types.InlineKeyboardMarkup()
+            student_button = types.InlineKeyboardButton(
+                text="Переглянути можливі вакансії", callback_data='get_list_offer')
+            employer_button = types.InlineKeyboardButton(
+                text="Нове резюме", callback_data='student_choice')
+            choose = types.InlineKeyboardButton(
+                text="Зміна перегляду", callback_data='who_am_i')
+
+            keyboard = [[choose, employer_button], [student_button]]
+            reply_markup = types.InlineKeyboardMarkup(keyboard)
+
+            bot.send_message(
+                chat_id, text='Ось всі можливі вакансії', reply_markup=reply_markup)
             print('Offer List')
 
         else:
@@ -475,6 +525,25 @@ def send_to_channel(call):
     except Exception as e:
         print(traceback.format_exc())
         bot.reply_to(call.message, 'Помилка відправлення в канал...')
+
+
+def form_for_summary_list(summary):
+    skills = summary['skills']
+    course = summary['course']
+    first_name_last_name = summary['first_name_last_name']
+    contact_info = summary['contact_info']
+
+    return '💻 ' + skills + '\n🎓 ' + course + '\n📋 ' + first_name_last_name + '\n📞 ' + contact_info,
+
+
+def form_for_offer_list(ofr):
+    position = ofr['position']
+    salary = ofr['salary']
+    company_name = ofr['company_name']
+    description = ofr['description']
+    contact_info = ofr['description']
+
+    return '💼 '+position + '\n💵 '+salary+'\n🏢 '+company_name+'\n📋 ' + description + '\n📞 '+contact_info
 
 
 def check_connections_with_db():
