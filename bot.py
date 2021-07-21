@@ -1,4 +1,3 @@
-from logging import exception
 import telebot
 from telebot import types
 import os
@@ -7,10 +6,10 @@ import traceback
 import pymongo
 import pprint
 from bson.objectid import ObjectId
-import time
 load_dotenv()
 
 bot = telebot.TeleBot('1870782408:AAFgZcSZCPTS_X9O0ckjUWbjr2FfhFjQTp4')
+
 
 class Offer:
     def __init__(self, position):
