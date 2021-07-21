@@ -1,14 +1,16 @@
 from logging import exception
-import telebot as telebot
+import telebot
 from telebot import types
+import os
+from dotenv import load_dotenv
 import traceback
 import pymongo
 import pprint
-
-# ПРОВЕРКА СВЯЗі
+from bson.objectid import ObjectId
+import time
+load_dotenv()
 
 bot = telebot.TeleBot('1870782408:AAFgZcSZCPTS_X9O0ckjUWbjr2FfhFjQTp4')
-
 
 class Offer:
     def __init__(self, position):
@@ -29,42 +31,34 @@ class Summary:
 
 Offer_dict = {}
 summary_dict = {}
-who_am_i = ''
 student_const = 'Студент'
 employer_const = 'Роботодавець'
-privateChatId = -1001243179442
-channelForSummary = '@channelForSummary'
-channelForOffer = '@chennalForVacation'
+privateChatId = os.getenv('PRIVATE_CHAT_ID')
+channelForSummary = os.getenv('CHANNEL_FOR_SUMMARY')
+channelForOffer = os.getenv('CHANNEL_FOR_OFFER')
+linkToChannelForSummary = os.getenv('LINK_TO_CHANNEL_FOR_SUMMARY')
+linkToChannelForOffer = os.getenv('LINK_TO_CHANNEL_FOR_OFFER')
+botDesctiption = os.getenv('BOT_DESCRIPTION')
 
-# Vlad DB mongodb+srv://admin:admin@cluster0.b6p5p.mongodb.net/myFirstDatabase?retryWrites=true&w=majority
 client = pymongo.MongoClient(
-    "mongodb+srv://admin:admin@cluster0.h4nf9.mongodb.net/myFirstDatabase?retryWrites=true&w=majority")
+    os.getenv('MONGO_DB_TOKEN'))
 
-db_name = 'Tel_Bot_Uzhnu'
-collection_offer = client[db_name]['Offer']
-collection_summary = client[db_name]['Summary']
+db_name = os.getenv('MONGO_DB_NAME')
+collection_offer = client[str(db_name)]['Offer']
+collection_summary = client[str(db_name)]['Summary']
 
 # Handle '/start' and '/help'
-
-
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
     try:
         start_keyboard = types.InlineKeyboardMarkup()
         summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
-                                                     url="https://t.me/channelForSummary")
+                                                     url=linkToChannelForSummary)
         offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
-                                                   url="https://t.me/chennalForVacation")
+                                                   url=linkToChannelForOffer)
         start_keyboard.add(summary_channel, offer_channel)
 
-        bot.reply_to(message, """\
-        Доброго дня це Бот для пошуку вакансій та розміщення резюме  для математиків.
-Щоб розмістити пропозицію такі поля:
-💼 Посада.
-💵 Заробітна плата(якщо 0 то договірна).
-🏢 Назва компанії.
-📋 Більш детальний опис пропозиції.
-        """, reply_markup=start_keyboard)
+        bot.reply_to(message, botDesctiption, reply_markup=start_keyboard)
         keyboard = types.InlineKeyboardMarkup()
         student_choice = types.InlineKeyboardButton(
             text="Студент", callback_data='student_choice')
@@ -94,7 +88,6 @@ def process_who_am_i(message):
         keyboard.add(student_choice, employer_choice)
         bot.edit_message_text(chat_id=message.chat.id, message_id=message.message_id,
                               text='Ви студент чи роботодавець', reply_markup=keyboard)
-        who_am_i = message.text
 
         if message.text == student_const:
             msg = bot.reply_to(
@@ -119,22 +112,6 @@ def process_who_am_i(message):
 '''
 #Employer Section
 '''
-# Handle '/new_offer
-
-
-@bot.message_handler(commands=['new_offer'])
-def new_offer(message):
-    chat_id = message.chat.id
-    position = message.text
-    offer = Offer(position)
-    Offer_dict[chat_id] = offer
-
-    chat_id = message.chat.id
-    bot.clear_step_handler_by_chat_id(chat_id)
-    msg = bot.reply_to(message, 'Введіть будь ласка посаду:')
-    bot.register_next_step_handler(msg, process_position_step)
-
-
 def process_position_step(message):
     try:
         chat_id = message.chat.id
@@ -232,8 +209,6 @@ def process_contact_info_step(message):
 '''
 # Student Section
 '''
-
-
 def process_skills_step(message):
     try:
         chat_id = message.chat.id
@@ -303,6 +278,22 @@ def process_student_contact_info_step(message):
     except Exception as e:
         print(traceback.format_exc())
         bot.reply_to(message, 'Помилка в публікації остаточного варіанту...')
+
+
+@bot.message_handler(commands=['delete'])
+def calling(message):
+    try:
+        keyboard_1 = types.InlineKeyboardMarkup()
+        offer_cal = types.InlineKeyboardButton(
+            text='Мої вакансії', callback_data='offer_cal')
+        summary_cal = types.InlineKeyboardButton(
+            text='Мої резюме', callback_data='summary_cal')
+        keyboard_1.add(offer_cal, summary_cal)
+        bot.send_message(message.chat.id, text='Оберіть, що бажаєте редагувати', reply_markup=keyboard_1)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'біда')
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -379,7 +370,7 @@ def send_to_channel(call):
                                   text='\nПісля верифікації її можна буде переглянути в каналі\n\n' + channelForOffer)
             keyboard = types.InlineKeyboardMarkup()
             approve = types.InlineKeyboardButton(
-                text="Підтвердити", callback_data='offer_approve,'+str(chat_id)+','+str(call.message.from_user.id))
+                text="Підтвердити", callback_data='offer_approve,'+str(chat_id)+','+str(user_id))
             cancel = types.InlineKeyboardButton(
                 text="Відхилити", callback_data='offer_cancel,'+str(chat_id))
 
@@ -409,6 +400,14 @@ def send_to_channel(call):
             keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
 
+            bot.send_message(
+                chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
+            message_offer_save = bot.send_message(chat_id=channelForOffer, text='💼 ' + offer.position
+                             + '\n💵 ' + offer.salary
+                             + '\n🏢 ' + offer.company_name
+                             + '\n📋 ' + offer.description
+                             + '\n📞 ' + offer.contact_info)
+
             check_connections_with_db()
             offer_to_db = {
                 'user_id': user_id,
@@ -417,17 +416,10 @@ def send_to_channel(call):
                 'company_name': offer.company_name,
                 'description': offer.description,
                 'contact_info': offer.contact_info,
+                'message_id': message_offer_save.message_id
             }
             # Send offer to db
             collection_offer.insert_one(offer_to_db)
-
-            bot.send_message(
-                chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
-            bot.send_message(chat_id=channelForOffer, text='💼 ' + offer.position
-                             + '\n💵 ' + offer.salary
-                             + '\n🏢 ' + offer.company_name
-                             + '\n📋 ' + offer.description
-                             + '\n📞 ' + offer.contact_info)
 
         elif 'offer_cancel' in call.data:
             data = call.data.split(',')
@@ -445,7 +437,7 @@ def send_to_channel(call):
             keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             bot.send_message(
-                chat_id=chat_id, text='Вашу вакансію відхилино!', reply_markup=reply_markup)
+                chat_id=chat_id, text='Вашу вакансію відхилeно!', reply_markup=reply_markup)
 
         elif 'summary_verefication' in call.data:
             data = call.data.split(',')
@@ -484,6 +476,14 @@ def send_to_channel(call):
             keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
 
+            bot.send_message(
+                chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
+
+            message_summary_save = bot.send_message(chat_id=channelForSummary, text='\n\n💻 ' + summary.skills
+                             + '\n🎓 ' + summary.course
+                             + '\n📋 ' + summary.first_name_last_name
+                             + '\n📞 ' + summary.contact_info)
+
             check_connections_with_db()
             summary_to_db = {
                 'user_id': user_id,
@@ -491,17 +491,10 @@ def send_to_channel(call):
                 'course': summary.course,
                 'first_name_last_name': summary.course,
                 'contact_info': summary.contact_info,
+                'message_id': message_summary_save.message_id
             }
             # Send summary to db
             collection_summary.insert_one(summary_to_db)
-
-            bot.send_message(
-                chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
-
-            bot.send_message(chat_id=channelForSummary, text='\n\n💻 ' + summary.skills
-                             + '\n🎓 ' + summary.course
-                             + '\n📋 ' + summary.first_name_last_name
-                             + '\n📞 ' + summary.contact_info)
 
         elif 'summary_cancel' in call.data:
             data = call.data.split(',')
@@ -525,11 +518,14 @@ def send_to_channel(call):
         elif call.data == 'get_list_summary':
             chat_id = call.message.chat.id
             user_id = call.from_user.id
-            user_offer = collection_offer.find({'user_id': user_id})
-
-            for x in collection_summary.find():
-                last = bot.send_message(chat_id, text=form_for_summary_list(x))
-
+            cur = collection_offer.find({'user_id': user_id})
+            for doc in cur:
+                for x in collection_summary.find():
+                    x_split = x['skills'].split()
+                    for a in x_split:
+                        if a in doc['position']:
+                            last = bot.send_message(chat_id, text=form_for_summary_list(x))
+                        break
             bot.edit_message_text(
                 chat_id=chat_id, message_id=call.message.message_id, text='Список резюме:')
 
@@ -541,9 +537,9 @@ def send_to_channel(call):
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
             summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
-                                                         url="https://t.me/channelForSummary")
+                                                         url=linkToChannelForSummary)
             offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
-                                                       url="https://t.me/chennalForVacation")
+                                                       url=linkToChannelForOffer)
             keyboard = [[summary_channel, offer_channel], [
                 choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
@@ -555,15 +551,11 @@ def send_to_channel(call):
         elif call.data == 'get_list_offer':
             chat_id = call.message.chat.id
             user_id = call.from_user.id
-
-            user_summary = collection_summary.find_one({'user_id': user_id})
-            pprint.pprint(user_summary['skills'])
-
-            for x in collection_offer.find({}):
-                last = bot.send_message(chat_id, text=form_for_offer_list(x))
-
-            bot.edit_message_text(
-                chat_id=chat_id, message_id=call.message.message_id, text='Список вакансій:')
+            skills_summary = collection_summary.find_one({'user_id': user_id})
+            for x in collection_offer.find():
+                if skills_summary['skills'] in x['position']:
+                    last = bot.send_message(chat_id, text=form_for_offer_list(x))
+            bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Список вакансій:')
 
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
@@ -573,23 +565,106 @@ def send_to_channel(call):
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
             summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
-                                                         url="https://t.me/channelForSummary")
+                                                         url=linkToChannelForSummary)
             offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
-                                                       url="https://t.me/chennalForVacation")
+                                                       url=linkToChannelForOffer)
 
             keyboard = [[summary_channel, offer_channel], [
                 choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
 
             bot.send_message(
-                chat_id, text='Ось всі можливі вакансії', reply_markup=reply_markup)
+                chat_id, text='Ось всі можливі вакансії (якщо нічого немає, то підходящі вакансії відсутні)', reply_markup=reply_markup)
             print('Offer List')
+
+        elif call.data == 'offer_cal':
+            chat_id = call.message.chat.id
+            user_id = call.from_user.id
+            offer_search_list = collection_offer.find({'user_id': user_id})
+            for x in offer_search_list:
+                keyboard_offer = types.InlineKeyboardMarkup()
+                edit_offer = types.InlineKeyboardButton(text='Змінити ✏', callback_data='edit_offer,'+str(x['_id'])+','+str(x['message_id']))
+                delete_offer = types.InlineKeyboardButton(text='Видалити ❌', callback_data='delete_offer,'+str(x['_id'])+','+str(x['message_id']))
+                keyboard_offer.add(edit_offer, delete_offer)
+                bot.send_message(chat_id, text=form_for_offer_list(x), reply_markup=keyboard_offer)
+            keyboard = types.InlineKeyboardMarkup()
+            student_button = types.InlineKeyboardButton(
+                text="Переглянути можливі вакансії", callback_data='get_list_offer')
+            employer_button = types.InlineKeyboardButton(
+                text="Нове резюме", callback_data='student_choice')
+            choose = types.InlineKeyboardButton(
+                text="Зміна перегляду", callback_data='who_am_i')
+            summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
+                                                         url=linkToChannelForSummary)
+            offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
+                                                       url=linkToChannelForOffer)
+
+            keyboard = [[summary_channel, offer_channel], [
+                choose, employer_button], [student_button]]
+            reply_markup = types.InlineKeyboardMarkup(keyboard)
+
+            bot.send_message(
+                chat_id, text='Ось всі ваші вакансії',
+                reply_markup=reply_markup)
+
+        elif call.data == 'summary_cal':
+            chat_id = call.message.chat.id
+            user_id = call.from_user.id
+            summary_search_list = collection_summary.find({'user_id': user_id})
+            for x in summary_search_list:
+                keyboard_summary = types.InlineKeyboardMarkup()
+                edit_summary = types.InlineKeyboardButton(text='Змінити ✏', callback_data='edit_summary,'+str(x['_id'])+','+str(x['message_id']))
+                delete_summary = types.InlineKeyboardButton(text='Видалити❌', callback_data='delete_summary,'+str(x['_id'])+','+str(x['message_id']))
+                keyboard_summary.add(edit_summary, delete_summary)
+                bot.send_message(chat_id, text=form_for_summary_list(x), reply_markup=keyboard_summary)
+            keyboard = types.InlineKeyboardMarkup()
+            student_button = types.InlineKeyboardButton(
+                text="Переглянути можливі вакансії", callback_data='get_list_offer')
+            employer_button = types.InlineKeyboardButton(
+                text="Нове резюме", callback_data='student_choice')
+            choose = types.InlineKeyboardButton(
+                text="Зміна перегляду", callback_data='who_am_i')
+            summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
+                                                         url=linkToChannelForSummary)
+            offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
+                                                       url=linkToChannelForOffer)
+
+            keyboard = [[summary_channel, offer_channel], [
+                choose, employer_button], [student_button]]
+            reply_markup = types.InlineKeyboardMarkup(keyboard)
+
+            bot.send_message(
+                chat_id, text='Ось всі ваші резюме',
+                reply_markup=reply_markup)
+
+        elif 'delete_offer' in call.data:
+            chat_id = call.message.chat.id
+            data = call.data.split(',')
+            id_object = data[1]
+            message_id = data[2]
+            collection_offer.delete_one({"_id": ObjectId("{}".format(id_object))})
+            bot.edit_message_text(
+                chat_id=chat_id, message_id=call.message.message_id, text='Вакансію видалено')
+            bot.delete_message(chat_id=channelForOffer, message_id=message_id)
+
+        elif 'delete_summary' in call.data:
+            chat_id = call.message.chat.id
+            data = call.data.split(',')
+            id_object = data[1]
+            message_id = data[2]
+            collection_summary.delete_one({"_id": ObjectId("{}".format(id_object))})
+            bot.edit_message_text(
+                chat_id=chat_id, message_id=call.message.message_id, text='Резюме видалено')
+            bot.delete_message(chat_id=channelForSummary, message_id=message_id)
 
         else:
             print('wrong callback')
+            print(call.data)
+
     except Exception as e:
         print(traceback.format_exc())
         bot.reply_to(call.message, 'Помилка відправлення в канал...')
+
 
 
 def form_for_summary_list(summary):
@@ -620,13 +695,6 @@ def check_connections_with_db():
         print("Could not connect to MongoDB")
 
 
-# Enable saving next step handlers to file "./.handlers-saves/step.save".
-# Delay=2 means that after any change in next step handlers (e.g. calling register_next_step_handler())
-# saving will hapen after delay 2 seconds.
-# bot.enable_save_next_step_handlers(delay=2)
-check = check_connections_with_db()
-# Load next_step_handlers from save file (default "./.handlers-saves/step.save")
-# WARNING It will work only if enable_save_next_step_handlers was called!
-# bot.load_next_step_handlers()
 
+check = check_connections_with_db()
 bot.polling(none_stop=True)
