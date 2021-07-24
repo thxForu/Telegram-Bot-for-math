@@ -45,6 +45,8 @@ client = pymongo.MongoClient(
 db_name = os.getenv('MONGO_DB_NAME')
 collection_offer = client[str(db_name)]['Offer']
 collection_summary = client[str(db_name)]['Summary']
+collection_verification = client[str(db_name)]['Verification']
+
 
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
@@ -279,6 +281,14 @@ def process_student_contact_info_step(message):
         bot.reply_to(message, 'Помилка в публікації остаточного варіанту...')
 
 
+def blin(message, message_id):
+    chat_id = message.chat.id
+    print(chat_id)
+    text = message.text
+    message_id = message_id
+    bot.send_message(chat_id, text)
+
+
 @bot.message_handler(commands=['delete'])
 def calling(message):
     try:
@@ -372,19 +382,33 @@ def send_to_channel(call):
                 text="Підтвердити", callback_data='offer_approve,'+str(chat_id)+','+str(user_id))
             cancel = types.InlineKeyboardButton(
                 text="Відхилити", callback_data='offer_cancel,'+str(chat_id))
-
-            keyboard.add(approve, cancel)
-
-            bot.send_message(chat_id=privateChatId, text='💼 ' + offer.position
+            change = types.InlineKeyboardButton(
+                text='Редагувати', callback_data='offer_change,')
+            keyboard.add(approve, cancel, change)
+            message_save = bot.send_message(chat_id=privateChatId, text='💼 ' + offer.position
                              + '\n💵 ' + offer.salary
                              + '\n🏢 ' + offer.company_name
                              + '\n📋 ' + offer.description
                              + '\n📞 ' + offer.contact_info, reply_markup=keyboard)
 
+            check_connections_with_db()
+            offer_to_db = {
+                'user_id': user_id,
+                'position': offer.position,
+                'salary': offer.salary,
+                'company_name': offer.company_name,
+                'description': offer.description,
+                'contact_info': offer.contact_info,
+                'message_id': message_save.message_id
+            }
+            # Send offer to db
+            collection_verification.insert_one(offer_to_db)
+
         elif 'offer_approve' in call.data:
             data = call.data.split(',')
             chat_id = int(data[1])
             user_id = int(data[2])
+            print(user_id, chat_id)
             offer = Offer_dict[chat_id]
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
@@ -418,12 +442,11 @@ def send_to_channel(call):
                 'message_id': message_offer_save.message_id
             }
             # Send offer to db
-            collection_offer.insert_one(offer_to_db)
+            collection_verification.insert_one(offer_to_db)
 
         elif 'offer_cancel' in call.data:
             data = call.data.split(',')
             chat_id = int(data[1])
-            offer = Offer_dict[chat_id]
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
             keyboard = types.InlineKeyboardMarkup()
@@ -437,6 +460,30 @@ def send_to_channel(call):
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             bot.send_message(
                 chat_id=chat_id, text='Вашу вакансію відхилeно!', reply_markup=reply_markup)
+
+        elif 'offer_change' in call.data:
+            chat = call.from_user.id
+            message_id = call.message.message_id
+            change = collection_verification.find_one({'message_id': message_id})
+            keyboard = types.InlineKeyboardMarkup()
+            position_change = types.InlineKeyboardButton(
+                text="Посаду", callback_data='position_change,'+str(message_id))
+            salary_change = types.InlineKeyboardButton(
+                text="Заробітну плату", callback_data='salary_change,'+str(message_id))
+            name_change = types.InlineKeyboardButton(
+                text="Назву компанії", callback_data='name_change,'+str(message_id))
+            description_change = types.InlineKeyboardButton(
+                text="Опис компанії", callback_data='description_change,'+str(message_id))
+            contact_info_change = types.InlineKeyboardButton(
+                text="Контактні лані", callback_data='contact_info_change,'+str(message_id))
+            keyboard.add(position_change, salary_change, name_change, description_change, contact_info_change)
+            bot.send_message(chat, text='💼 ' + change['position']
+                             + '\n💵 ' + change['salary']
+                             + '\n🏢 ' + change['company_name']
+                             + '\n📋 ' + change['description']
+                             + '\n📞 ' + change['contact_info'])
+            bot.send_message(chat, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
+
 
         elif 'summary_verefication' in call.data:
             data = call.data.split(',')
@@ -454,10 +501,22 @@ def send_to_channel(call):
             cancel = types.InlineKeyboardButton(
                 text="Відхилити", callback_data='summary_cancel,'+str(chat_id))
             keyboard.add(approve, cancel)
-            bot.send_message(chat_id=privateChatId, text='\n\n💻 ' + summary.skills
+            message_summary_save = bot.send_message(chat_id=privateChatId, text='\n\n💻 ' + summary.skills
                              + '\n🎓 ' + summary.course
                              + '\n📋 ' + summary.first_name_last_name
                              + '\n📞 ' + summary.contact_info, reply_markup=keyboard)
+
+            check_connections_with_db()
+            summary_to_db = {
+                'user_id': user_id,
+                'skills': summary.skills,
+                'course': summary.course,
+                'first_name_last_name': summary.course,
+                'contact_info': summary.contact_info,
+                'message_id': message_summary_save.message_id
+            }
+            # Send summary to db
+            collection_verification.insert_one(summary_to_db)
 
         elif 'summary_approve' in call.data:
             data = call.data.split(',')
@@ -478,22 +537,10 @@ def send_to_channel(call):
             bot.send_message(
                 chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
 
-            message_summary_save = bot.send_message(chat_id=channelForSummary, text='\n\n💻 ' + summary.skills
+            bot.send_message(chat_id=channelForSummary, text='\n\n💻 ' + summary.skills
                              + '\n🎓 ' + summary.course
                              + '\n📋 ' + summary.first_name_last_name
                              + '\n📞 ' + summary.contact_info)
-
-            check_connections_with_db()
-            summary_to_db = {
-                'user_id': user_id,
-                'skills': summary.skills,
-                'course': summary.course,
-                'first_name_last_name': summary.course,
-                'contact_info': summary.contact_info,
-                'message_id': message_summary_save.message_id
-            }
-            # Send summary to db
-            collection_summary.insert_one(summary_to_db)
 
         elif 'summary_cancel' in call.data:
             data = call.data.split(',')
@@ -666,6 +713,8 @@ def send_to_channel(call):
 
 
 
+
+
 def form_for_summary_list(summary):
     skills = summary['skills']
     course = summary['course']
@@ -683,6 +732,23 @@ def form_for_offer_list(ofr):
     contact_info = ofr['description']
 
     return '💼 '+position + '\n💵 '+salary+'\n🏢 '+company_name+'\n📋 ' + description + '\n📞 '+contact_info
+
+
+def position_change(call, message):
+    if 'position_change,' in call.data:
+        data = call.data.split(',')
+        chat_id = message.chat.id
+        message_id = data[1]
+        msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Ведіть нову посаду:')
+        bot.register_next_step_handler(msg, position_change_progress(message, message_id))
+
+
+def position_change_progress(message, message_id):
+    chat_id = message.chat.id
+    message_id = message_id
+    text = message.text
+    bot.send_message(chat_id, text)
+
 
 
 def check_connections_with_db():
