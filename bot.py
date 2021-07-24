@@ -32,7 +32,7 @@ Offer_dict = {}
 summary_dict = {}
 student_const = 'Студент'
 employer_const = 'Роботодавець'
-privateChatId = os.getenv('PRIVATE_CHAT_ID')
+verificationChannel = os.getenv('PRIVATE_CHAT_ID')
 channelForSummary = os.getenv('CHANNEL_FOR_SUMMARY')
 channelForOffer = os.getenv('CHANNEL_FOR_OFFER')
 linkToChannelForSummary = os.getenv('LINK_TO_CHANNEL_FOR_SUMMARY')
@@ -280,6 +280,16 @@ def process_student_contact_info_step(message):
         print(traceback.format_exc())
         bot.reply_to(message, 'Помилка в публікації остаточного варіанту...')
 
+def position_change_progress(message, message_id):
+    try:
+        chat_id = message.chat.id
+        message_id = message_id
+        text = message.text
+        bot.send_message(chat_id, text)
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'Помилка')
+
 
 def blin(message, message_id):
     chat_id = message.chat.id
@@ -383,9 +393,9 @@ def send_to_channel(call):
             cancel = types.InlineKeyboardButton(
                 text="Відхилити", callback_data='offer_cancel,'+str(chat_id))
             change = types.InlineKeyboardButton(
-                text='Редагувати', callback_data='offer_change,')
+                text='Редагувати', callback_data='offer_change')
             keyboard.add(approve, cancel, change)
-            message_save = bot.send_message(chat_id=privateChatId, text='💼 ' + offer.position
+            message_save = bot.send_message(chat_id=verificationChannel, text='💼 ' + offer.position
                              + '\n💵 ' + offer.salary
                              + '\n🏢 ' + offer.company_name
                              + '\n📋 ' + offer.description
@@ -463,19 +473,19 @@ def send_to_channel(call):
 
         elif 'offer_change' in call.data:
             chat = call.from_user.id
-            message_id = call.message.message_id
-            change = collection_verification.find_one({'message_id': message_id})
+            verefication_message_id = call.message.message_id
+            change = collection_verification.find_one({'message_id': verefication_message_id})
             keyboard = types.InlineKeyboardMarkup()
             position_change = types.InlineKeyboardButton(
-                text="Посаду", callback_data='position_change,'+str(message_id))
+                text="Посаду", callback_data='position_change,'+str(verefication_message_id))
             salary_change = types.InlineKeyboardButton(
-                text="Заробітну плату", callback_data='salary_change,'+str(message_id))
+                text="Заробітну плату", callback_data='salary_change,'+str(verefication_message_id))
             name_change = types.InlineKeyboardButton(
-                text="Назву компанії", callback_data='name_change,'+str(message_id))
+                text="Назву компанії", callback_data='name_change,'+str(verefication_message_id))
             description_change = types.InlineKeyboardButton(
-                text="Опис компанії", callback_data='description_change,'+str(message_id))
+                text="Опис компанії", callback_data='description_change,'+str(verefication_message_id))
             contact_info_change = types.InlineKeyboardButton(
-                text="Контактні лані", callback_data='contact_info_change,'+str(message_id))
+                text="Контактні лані", callback_data='contact_info_change,'+str(verefication_message_id))
             keyboard.add(position_change, salary_change, name_change, description_change, contact_info_change)
             bot.send_message(chat, text='💼 ' + change['position']
                              + '\n💵 ' + change['salary']
@@ -501,7 +511,7 @@ def send_to_channel(call):
             cancel = types.InlineKeyboardButton(
                 text="Відхилити", callback_data='summary_cancel,'+str(chat_id))
             keyboard.add(approve, cancel)
-            message_summary_save = bot.send_message(chat_id=privateChatId, text='\n\n💻 ' + summary.skills
+            message_summary_save = bot.send_message(chat_id=verificationChannel, text='\n\n💻 ' + summary.skills
                              + '\n🎓 ' + summary.course
                              + '\n📋 ' + summary.first_name_last_name
                              + '\n📞 ' + summary.contact_info, reply_markup=keyboard)
@@ -687,21 +697,28 @@ def send_to_channel(call):
             chat_id = call.message.chat.id
             data = call.data.split(',')
             id_object = data[1]
-            message_id = data[2]
+            verefication_message_id = data[2]
             collection_offer.delete_one({"_id": ObjectId("{}".format(id_object))})
             bot.edit_message_text(
                 chat_id=chat_id, message_id=call.message.message_id, text='Вакансію видалено')
-            bot.delete_message(chat_id=channelForOffer, message_id=message_id)
+            bot.delete_message(chat_id=channelForOffer, message_id=verefication_message_id)
 
         elif 'delete_summary' in call.data:
             chat_id = call.message.chat.id
             data = call.data.split(',')
             id_object = data[1]
-            message_id = data[2]
+            verefication_message_id = data[2]
             collection_summary.delete_one({"_id": ObjectId("{}".format(id_object))})
             bot.edit_message_text(
                 chat_id=chat_id, message_id=call.message.message_id, text='Резюме видалено')
-            bot.delete_message(chat_id=channelForSummary, message_id=message_id)
+            bot.delete_message(chat_id=channelForSummary, message_id=verefication_message_id)
+
+        if 'position_change,' in call.data:
+            data = call.data.split(',')
+            chat_id = call.message.chat.id
+            verefication_message_id = data[1]
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Ведіть нову посаду:')
+            bot.register_next_step_handler(msg, position_change_progress)
 
         else:
             print('wrong callback')
@@ -732,22 +749,8 @@ def form_for_offer_list(ofr):
     contact_info = ofr['description']
 
     return '💼 '+position + '\n💵 '+salary+'\n🏢 '+company_name+'\n📋 ' + description + '\n📞 '+contact_info
+    
 
-
-def position_change(call, message):
-    if 'position_change,' in call.data:
-        data = call.data.split(',')
-        chat_id = message.chat.id
-        message_id = data[1]
-        msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Ведіть нову посаду:')
-        bot.register_next_step_handler(msg, position_change_progress(message, message_id))
-
-
-def position_change_progress(message, message_id):
-    chat_id = message.chat.id
-    message_id = message_id
-    text = message.text
-    bot.send_message(chat_id, text)
 
 
 
