@@ -1036,7 +1036,7 @@ def send_to_channel(call):
             bot.send_message(
                 chat_id=chat_id, text='Ваше резюме відхилино!', reply_markup=reply_markup)
 
-        elif 'summary_change' in call.data:  # запускає редагування резюме
+        elif 'summary_change' in call.data:  # запускає редагування резюме)
             chat = call.from_user.id
             message_id = call.message.message_id
             print(message_id)
