@@ -773,6 +773,8 @@ def send_to_channel(call):
             user_id = int(data[1])
             obj = data[2]
             offer_vacantion = collection_verification.find_one({'_id':  ObjectId("{}".format(obj))})
+            link = bot.create_chat_invite_link(channelForSummary, member_limit=1)
+            c = collection_offer.find_one({'user_id': str(user_id)})
             print(user_id, chat_id)
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
@@ -787,8 +789,13 @@ def send_to_channel(call):
             keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
 
-            bot.send_message(
-                chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
+            if c is None:
+                bot.send_message(
+                    chat_id=chat_id, text='Вашу вакансію опубліковано!' + str(link.invite_link),
+                    reply_markup=reply_markup)
+            else:
+                bot.send_message(
+                    chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
             message_offer_save = bot.send_message(chat_id=channelForOffer, text='💼 ' + offer_vacantion['position']
                                                                                 + '\n💵 ' + offer_vacantion["salary"]
                                                                                 + '\n🏢 ' + offer_vacantion["company_name"]
@@ -808,7 +815,6 @@ def send_to_channel(call):
             # Send offer to db
             collection_offer.insert_one(offer_to_db)
             collection_verification.delete_one({'_id':  ObjectId("{}".format(obj))})
-
 
         elif 'offer_cancel' in call.data:
             data = call.data.split(',')
@@ -1127,6 +1133,8 @@ def send_to_channel(call):
             obj = data[2]
             summary_vacantion = collection_verification.find_one({'_id': ObjectId("{}".format(obj))})
             print(user_id, chat_id)
+            link = bot.create_chat_invite_link(channelForOffer, member_limit=1)
+            c = collection_summary.find_one({'user_id': str(user_id)})
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
             keyboard = types.InlineKeyboardMarkup()
@@ -1140,8 +1148,13 @@ def send_to_channel(call):
             keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
 
-            bot.send_message(
-                chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
+            if c is None:
+                bot.send_message(
+                    chat_id=chat_id, text='Ваше резюме опубліковано!' + str(link.invite_link),
+                    reply_markup=reply_markup)
+            else:
+                bot.send_message(
+                    chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
             message_offer_save = bot.send_message(chat_id=channelForSummary, text='💻 ' + summary_vacantion["skills"]
                                                                                 + '\n🎓 ' + summary_vacantion[
                                                                                     "course"]
@@ -1155,7 +1168,7 @@ def send_to_channel(call):
                 'user_id': summary_vacantion['user_id'],
                 'skills': summary_vacantion['skills'],
                 'course': summary_vacantion['course'],
-                'company_name': summary_vacantion['first_name_last_name'],
+                'first_name_last_name': summary_vacantion['first_name_last_name'],
                 'contact_info': summary_vacantion['contact_info'],
                 'message_id': message_offer_save.message_id
             }
