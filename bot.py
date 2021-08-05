@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import telebot
 from telebot import types
 import os
@@ -6,6 +7,7 @@ import traceback
 import pymongo
 import pprint
 from bson.objectid import ObjectId
+import time
 load_dotenv()
 
 bot = telebot.TeleBot('1870782408:AAFgZcSZCPTS_X9O0ckjUWbjr2FfhFjQTp4')
@@ -37,7 +39,28 @@ channelForSummary = os.getenv('CHANNEL_FOR_SUMMARY')
 channelForOffer = os.getenv('CHANNEL_FOR_OFFER')
 linkToChannelForSummary = os.getenv('LINK_TO_CHANNEL_FOR_SUMMARY')
 linkToChannelForOffer = os.getenv('LINK_TO_CHANNEL_FOR_OFFER')
-botDesctiption = os.getenv('BOT_DESCRIPTION')
+fac_and_spec = {'Біологічний факультет': ['Біологія', 'Садівництво та виноградарство', 'Середня освіта. Біологія та здоров’я людини'],
+'Географічний факультет': ['Географія', 'Геодезія та землеустрій', 'Лісове господарство', 'Середня освіта. Географія'],
+'Економічний факультет': ['Економіка', 'Облік і оподаткування', 'Підприємництво, торгівля та біржова діяльність', 'Фінанси, банківська справа та страхування'],
+'Інженерно-технічний факультет': ['Автоматизація та комп’ютерно-інтегровані технології', 'Будівництво та цивільна інженерія', 'Електроніка Комп’ютерна інженерія', 'Прикладна механіка'],
+'Медичний факультет': ['Медицина', 'Медсестринство. Екстрена медицина', 'Медсестринство. Медсестринство', 'Фармація, промислова фармація'],
+'Стоматологічний факультет': ['Стоматологія'],
+'Факультет здоров’я та фізичного виховання':['Психологія', 'Середня освіта. Фізична культура', 'Спеціальна освіта. Олігофренопедагогіка', 'Фізична культура і спорт', 'Фізична терапія, ерготерапія'],
+'Факультет іноземної філології': ['Середня освіта. Англійська мова і література', 'Середня освіта. Німецька мова і література', 'Середня освіта. Румунська мова і література', 'Середня освіта. Французька мова і література Філологія.', 'Германські мови та літератури, перша – англійська',
+'Філологія. Германські мови та літератури, перша – німецька', 'Філологія. Романські мови та літератури, перша – французька'],
+'Факультет інформаційних технологій': ['Інженерія програмного забезпечення', 'Інформаційні системи та технології', 'Комп’ютерні науки'],
+'Факультет історії та міжнародних відносин': ['Історія та археологія', 'Культурологія', 'Маркетинг', 'Менеджмент', 'Міжнародні відносини, суспільні комунікації та регіональні студії', 'Середня освіта. Історія' ],
+'Факультет математики та цифрових технологій': ['Математика', 'Прикладна математика', 'Середня освіта. Математика', 'Системний аналіз'],
+'Факультет міжнародних економічних відносин': ['Міжнародні економічні відносини', 'Філологія. Прикладна лінгвістика'],
+'Факультет суспільних наук': ['Дошкільна освіта', 'Політологія', 'Початкова освіта', 'Психологія', 'Публічне управління та адміністрування', 'Соціальна робота', 'Соціологія', 'Філософія'],
+'Факультет туризму та міжнародних комунікацій': ['Готельно-ресторанна справа', 'Туризм'],
+'Фізичний факультет': ['Біомедична інженерія', 'Кібербезпека', 'Мікро- та наносистемна техніка', 'Прикладна фізика та наноматеріали', 'Середня освіта. Фізика', 'Телекомунікації та радіотехніка', 'Фізика та астрономія'],
+'Філологічний факультет': ['Журналістика', 'Середня освіта. Російська мова і література', 'Середня освіта. Українська мова і література', 'Середня освіта. Українська мова і література', 'Філологія. Слов’янські мови та літератури, перша – російська', 'Філологія. Слов’янські мови та літератури, перша –словацька', 'Філологія. Слов’янські мови та літератури, перша –чеська', 'Філологія. Українська мова і література'],
+'Хімічний факультет': ['Екологія', 'Середня освіта. Хімія', 'Хімічні технології та інженерія', 'Хімія'],
+'Юридичний факультет': ['Міжнародне право', 'Право', 'Правоохоронна діяльність'],
+'Українсько-угорський навчально-науковий інститут': ['Міжнародні відносини, суспільні комунікації та регіональні студії', 'Середня освіта. Історія', 'Середня освіта. Математика', 'Середня освіта. Угорська мова і література', 'Середня освіта. Фізика', 'Філологія. Угро-фінські мови та літератури, перша – угорська'],
+'Природничо-гуманітарний фаховий коледж': ['Будівництво та цивільна інженерія', 'Геодезія та землеустрій', 'Інженерія програмного забезпечення', 'Облік і оподаткування', 'Право', 'Туризм', 'Фінанси, банківська справа та страхування']
+}
 
 client = pymongo.MongoClient(
     os.getenv('MONGO_DB_TOKEN'))
@@ -58,8 +81,6 @@ def send_welcome(message):
         offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
                                                    url=linkToChannelForOffer)
         start_keyboard.add(summary_channel, offer_channel)
-
-        bot.reply_to(message, botDesctiption, reply_markup=start_keyboard)
         keyboard = types.InlineKeyboardMarkup()
         student_choice = types.InlineKeyboardButton(
             text="Студент", callback_data='student_choice')
@@ -70,7 +91,7 @@ def send_welcome(message):
 
         keyboard.add(student_choice, employer_choice)
 
-        bot.reply_to(message, 'Ви студент чи роботодавець?',
+        bot.reply_to(message, 'Вас вітає Бот для пошуку вакансій та розміщення резюме!',
                      reply_markup=keyboard)
 
     except Exception as e:
@@ -93,7 +114,7 @@ def process_who_am_i(message):
         if message.text == student_const:
             msg = bot.reply_to(
                 message, 'Введіть мови програмування які ви знаєте(через пробіл):')
-            bot.register_next_step_handler(msg, process_skills_step)
+            bot.register_next_step_handler(msg, name_step)
             return
 
         elif message.text == employer_const:
@@ -113,6 +134,7 @@ def process_who_am_i(message):
 '''
 #Employer Section
 '''
+
 def process_position_step(message):
     try:
         chat_id = message.chat.id
@@ -210,19 +232,38 @@ def process_contact_info_step(message):
 '''
 # Student Section
 '''
-def process_skills_step(message):
+
+
+def name_step(message):
     try:
         chat_id = message.chat.id
         skills = message.text
         summary = Summary(skills)
         summary_dict[chat_id] = summary
-
         msg = bot.reply_to(
-            message, 'Введіть курс на якому ви навчаєтесь (1-6)')
-        bot.register_next_step_handler(msg, process_course_step)
+            message, 'Вік:')
+        bot.register_next_step_handler(msg, age_step)
     except Exception as e:
         print(Exception(e))
         bot.reply_to(message, 'Помилка в зчитуванні курса...')
+
+
+def age_step(message):
+    try:
+        chat_id = message.chat.id
+        age = int(message.text)
+        summary = summary_dict[chat_id]
+        summary.age = str(age)
+        faculty = fac_and_spec
+        keyboard = types.InlineKeyboardMarkup()
+        bruch = list(faculty.keys())
+        for key in bruch:
+            keyboard.add(types.InlineKeyboardButton(text=str(key), callback_data='fac_st,' + str(key[0:29])))
+        bot.send_message(chat_id, text='Факультет', reply_markup=keyboard)
+
+    except Exception as e:
+        print(Exception(e))
+        bot.reply_to(message, 'Помилка')
 
 
 def process_course_step(message):
@@ -232,9 +273,14 @@ def process_course_step(message):
         if course > 0 and course < 7:
             summary = summary_dict[chat_id]
             summary.course = str(course)
-            msg = bot.reply_to(message, 'Введіть Призвіще Ім`я По батькові')
-            bot.register_next_step_handler(
-                msg, process_fist_name_last_name_step)
+            markup = types.InlineKeyboardMarkup()
+            yes = types.InlineKeyboardButton(text='Високий рівень', callback_data='english_know'+','+'Високий рівень')
+            midl = types.InlineKeyboardButton(text='Середній рівень', callback_data='english_know' + ',' + 'Середній рівень')
+            no = types.InlineKeyboardButton(text='Не володію',
+                                            callback_data='english_know' + ',' + 'Не володію')
+            markup.add(yes, midl, no)
+            bot.send_message(chat_id, 'Знання англійської мови', reply_markup=markup)
+
         else:
             msg = bot.reply_to(message, 'Введіть курс коректтно.')
             bot.register_next_step_handler(msg, process_course_step)
@@ -244,41 +290,82 @@ def process_course_step(message):
         bot.reply_to(message, 'Помилка в зчитувані курса...')
 
 
-def process_fist_name_last_name_step(message):
+def personal_qualities(message):
     try:
         chat_id = message.chat.id
-        fnlt = message.text
+        personal_qualities = message.text
+        print(personal_qualities)
         summary = summary_dict[chat_id]
-        summary.first_name_last_name = fnlt
-        msg = bot.reply_to(message, 'Введіть контактні данні')
-        bot.register_next_step_handler(msg, process_student_contact_info_step)
+        summary.personal_qualities = personal_qualities
+        msg = bot.reply_to(message, 'Інші навички:')
+        bot.register_next_step_handler(msg, another)
+
     except Exception as e:
         print(Exception(e))
-        bot.reply_to(message, 'Помилка в зчитуванні контактів...')
+        bot.reply_to(message, 'Помилка')
 
 
-def process_student_contact_info_step(message):
+def another(message):
     try:
         chat_id = message.chat.id
-        user_id = message.from_user.id
-        contact_info = message.text
+        another = message.text
         summary = summary_dict[chat_id]
-        summary.contact_info = contact_info
-
-        keyboard = types.InlineKeyboardMarkup()
-        send_button = types.InlineKeyboardButton(
-            text="Верифікувати", callback_data='summary_verefication,'+str(user_id))
-        keyboard.add(send_button)
-
-        bot.send_message(chat_id, text='Ваше резюме буде виглядати ось так:'
-                         + '\n\n💻 ' + summary.skills
-                         + '\n🎓 ' + summary.course
-                         + '\n📋 ' + summary.first_name_last_name
-                         + '\n📞 ' + summary.contact_info, reply_markup=keyboard)
+        summary.another = another
+        print(another)
+        msg = bot.reply_to(message, 'Досвід роботи:')
+        bot.register_next_step_handler(msg, experience)
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'Помилка в публікації остаточного варіанту...')
+        bot.reply_to(message, 'Помилка')
+
+
+def experience(message):
+    try:
+        chat_id = message.chat.id
+        experience = message.text
+        print(experience)
+        summary = summary_dict[chat_id]
+        summary.experience = experience
+        msg = bot.reply_to(message, 'Контактний телефон:')
+        bot.register_next_step_handler(msg, summary_contact_info)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'Помилка')
+
+def summary_contact_info(message):
+    try:
+        chat_id = message.chat.id
+        contact_info = message.text
+        print(contact_info)
+        summary = summary_dict[chat_id]
+        summary.contact_info = contact_info
+        msg = bot.reply_to(message, 'Адреса електронної пошти:')
+        bot.register_next_step_handler(msg, email_summary)
+
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'Помилка')
+
+
+def email_summary(message):
+    try:
+        chat_id = message.chat.id
+        email_summary = message.text
+        print(email_summary)
+        summary = summary_dict[chat_id]
+        summary.email = email_summary
+        markup = types.InlineKeyboardMarkup()
+        personal_consent = types.InlineKeyboardButton(text="✅ Даю згоду", callback_data='summary_verefication')
+        markup.add(personal_consent)
+        bot.send_message(chat_id, 'Згода на використання персональних даних', reply_markup=markup)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'Помилка')
+
 
 # Функції для редагування вакансій
 def position_change_progress(message):
@@ -670,9 +757,9 @@ def send_to_channel(call):
         elif call.data == 'new_summary':
             chat_id = call.message.chat.id
             msg = bot.edit_message_text(
-                chat_id=chat_id, message_id=call.message.message_id, text='Введіть мови програмування які ви знаєте:')
+                chat_id=chat_id, message_id=call.message.message_id, text='Прізвище, ім’я, по батькові:')
 
-            bot.register_next_step_handler(msg, process_skills_step)
+            bot.register_next_step_handler(msg, name_step)
 
         elif call.data == 'new_offer':
             chat_id = call.message.chat.id
@@ -938,35 +1025,47 @@ def send_to_channel(call):
             collection_verification.update_one({"_id": ObjectId("{}".format(id_object))}, {'$set': {"message_id": message_save.message_id}})
 
         elif 'summary_verefication' in call.data:
-            data = call.data.split(',')
             chat_id = call.message.chat.id
-            user_id = data[1]
             summary = summary_dict[chat_id]
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text='\nПісля верифікації його можна буде переглянути в каналі\n\n' + channelForSummary)
+                                  text='\nВаше резюме прийнято для обробки та перевірки. Очікуйте на повідомлення')
 
-            print('UserId in sum veref: '+str(user_id))
+            print('UserId in sum veref: '+str(chat_id))
 
             keyboard = types.InlineKeyboardMarkup()
             approve = types.InlineKeyboardButton(
-                text="Підтвердити", callback_data='summary_approve,'+str(chat_id)+','+str(user_id))
+                text="Підтвердити", callback_data='summary_approve,'+str(chat_id)+','+str(chat_id))
             cancel = types.InlineKeyboardButton(
                 text="Відхилити", callback_data='summary_cancel,'+str(chat_id))
             change = types.InlineKeyboardButton(
                 text='Редагувати', callback_data='summary_change,')
             keyboard.add(approve, cancel, change)
-            message_summary_save = bot.send_message(chat_id=privateChatId, text='\n\n💻 ' + summary.skills
-                             + '\n🎓 ' + summary.course
-                             + '\n📋 ' + summary.first_name_last_name
-                             + '\n📞 ' + summary.contact_info, reply_markup=keyboard)
+            message_summary_save = bot.send_message(chat_id=privateChatId, text='Прізвище, ім’я, по батькові:' + summary.skills
+                             + '\nВік: ' + summary.age
+                             + '\nФакультет:' + summary.faculty
+                             + '\nСпеціальність:' + summary.specialty
+                             + '\nКурс:' + summary.course
+                             + '\nЗнання англійської мови:' + summary.english_know_lvl
+                             + '\nОсобисті якості:' + summary.personal_qualities
+                             + '\nІнші навички:' + summary.another
+                             + '\nДосвід роботи:' + summary.experience
+                             + '\nКонтактний телефон:' + summary.contact_info
+                             + '\nАдреса електронної пошти:' + summary.email, reply_markup=keyboard)
 
             check_connections_with_db()
             summary_to_db = {
-                'user_id': user_id,
-                'skills': summary.skills,
+                'user_id': chat_id,
+                'name': summary.skills,
+                'age': summary.age,
+                'faculty': summary.faculty,
+                'specialty': summary.specialty,
                 'course': summary.course,
-                'first_name_last_name': summary.first_name_last_name,
+                'english_know_lvl': summary.english_know_lvl,
+                'personal_qualities': summary.personal_qualities,
+                'another': summary.another,
+                'experience': summary.experience,
                 'contact_info': summary.contact_info,
+                'email': summary.email,
                 'message_id': message_summary_save.message_id
             }
             # Send summary to db
@@ -1318,6 +1417,42 @@ def send_to_channel(call):
             bot.edit_message_text(
                 chat_id=chat_id, message_id=call.message.message_id, text='Резюме видалено')
             bot.delete_message(chat_id=channelForSummary, message_id=message_id)
+
+        elif 'fac_st,' in call.data:
+            chat_id = call.message.chat.id
+            fack = call.data.split(',')
+            summary = summary_dict[chat_id]
+            markup = types.InlineKeyboardMarkup()
+            for keys, value in fac_and_spec.items():
+                if fack[1] in keys:
+                    summary.faculty = keys
+                    for x in value:
+                        markup.add(types.InlineKeyboardButton(text=x, callback_data='spec,' + str(x[0:29])))
+            bot.send_message(chat_id, text='Спеціальність:', reply_markup=markup)
+
+        elif 'spec,' in call.data:
+            chat_id = call.message.chat.id
+            summary = summary_dict[chat_id]
+            spec = call.data.split(',')
+            fac = fac_and_spec
+            a = 0
+            for value in fac.values():
+                for x in value:
+                    if spec[1] in x:
+                        a = x
+            print(a)
+            summary.specialty = a
+            msg = bot.reply_to(call.message, text='Курс:')
+            bot.register_next_step_handler(msg, process_course_step)
+
+        elif 'english_know' in call.data:
+            chat_id = call.message.chat.id
+            english_know_lvl = call.data.split(',')
+            print(english_know_lvl)
+            summary = summary_dict[chat_id]
+            summary.english_know_lvl = english_know_lvl[1]
+            msg = bot.reply_to(call.message, 'Особисті якості:')
+            bot.register_next_step_handler(msg, personal_qualities)
 
         else:
             print('wrong callback')
