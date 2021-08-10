@@ -14,8 +14,8 @@ bot = telebot.TeleBot('1870782408:AAFgZcSZCPTS_X9O0ckjUWbjr2FfhFjQTp4')
 
 
 class Offer:
-    def __init__(self, position):
-        self.position = position
+    def __init__(self, comp_name):
+        self.comp_name = comp_name
         self.salary = None
         self.company_name = None
         self.description = None
@@ -23,8 +23,8 @@ class Offer:
 
 
 class Summary:
-    def __init__(self, skills):
-        self.skills = skills
+    def __init__(self, name):
+        self.name = name
         self.course = None
         self.first_name_last_name = None
         self.contact_info = None
@@ -60,6 +60,10 @@ fac_and_spec = {'Біологічний факультет': ['Біологія'
 'Юридичний факультет': ['Міжнародне право', 'Право', 'Правоохоронна діяльність'],
 'Українсько-угорський навчально-науковий інститут': ['Міжнародні відносини, суспільні комунікації та регіональні студії', 'Середня освіта. Історія', 'Середня освіта. Математика', 'Середня освіта. Угорська мова і література', 'Середня освіта. Фізика', 'Філологія. Угро-фінські мови та літератури, перша – угорська'],
 'Природничо-гуманітарний фаховий коледж': ['Будівництво та цивільна інженерія', 'Геодезія та землеустрій', 'Інженерія програмного забезпечення', 'Облік і оподаткування', 'Право', 'Туризм', 'Фінанси, банківська справа та страхування']
+}
+direction_and_spec = {'Середня освіта': ['Середня освіта. Біологія та здоров’я людини', 'Середня освіта. Географія', 'Середня освіта. Фізика', 'Середня освіта. Математика'],
+'Програмування ': ['Комп’ютерна інженерія', 'Системний аналіз'],
+'Медицина': ['Медицина', 'Медсестринство. Екстрена медицина', 'Медсестринство. Медсестринство', 'Фармація, промислова фармація']
 }
 
 client = pymongo.MongoClient(
@@ -119,7 +123,7 @@ def process_who_am_i(message):
 
         elif message.text == employer_const:
             msg = bot.reply_to(message, 'Введіть будь ласка посаду:')
-            bot.register_next_step_handler(msg, process_position_step)
+            bot.register_next_step_handler(msg, company_name)
             return
 
         else:
@@ -135,93 +139,103 @@ def process_who_am_i(message):
 #Employer Section
 '''
 
-def process_position_step(message):
+def company_name(message):
     try:
         chat_id = message.chat.id
         print('Chat id: '+str(chat_id))
         print('User id in pos stet'+str(message.from_user.id))
-
-        position = message.text
-        offer = Offer(position)
+        comp_name = message.text
+        offer = Offer(comp_name)
         Offer_dict[chat_id] = offer
-        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
-        markup.add('Договірна')
-        msg = bot.reply_to(
-            message, 'Введіть заробітну плату', reply_markup=markup)
-        bot.register_next_step_handler(msg, process_salary_step)
+        msg = bot.send_message(chat_id, text='Вакансія:')
+        bot.register_next_step_handler(msg, vacantion)
+
+
+    except Exception as e:
+        print(Exception(e))
+        bot.reply_to(message, 'oooops')
+
+def vacantion(message):
+    try:
+        chat_id = message.chat.id
+        offer = Offer_dict[chat_id]
+        vacantion = message.text
+        offer.vacantion = vacantion
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        high_school_yes = types.InlineKeyboardButton(text='Так', callback_data='high_school' + ',' + 'Так')
+        high_school_no = types.InlineKeyboardButton(text='Ні', callback_data='high_school' + ',' + 'Ні')
+        markup.add(high_school_yes, high_school_no)
+        bot.send_message(chat_id, text='Вимоги до кандидатів:\nЗакінчена вища освіта:', reply_markup=markup)
+
     except Exception as e:
         print(Exception(e))
         bot.reply_to(message, 'oooops')
 
 
-def process_salary_step(message):
+def othe_progress(message):
+    try:
+        chat_id = message.chat.id
+        other = message.text
+        print(other)
+        offer = Offer_dict[chat_id]
+        offer.other = other
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        official_work_yes = types.InlineKeyboardButton(text='Так', callback_data='official_work' + ',' + 'Так')
+        official_work_no = types.InlineKeyboardButton(text='Ні', callback_data='official_work' + ',' + 'Ні')
+        markup.add(official_work_yes, official_work_no)
+        bot.send_message(chat_id, text='Вимоги до кандидатів:\nЗакінчена вища освіта:', reply_markup=markup)
+
+    except Exception as e:
+        print(Exception(e))
+        bot.reply_to(message, 'oooops')
+
+
+def process_salary(message):
     try:
         chat_id = message.chat.id
         offer = Offer_dict[chat_id]
         salary = message.text
-        markup = types.ReplyKeyboardRemove()
+        markup = types.ReplyKeyboardMarkup()
         if not salary.isdigit() and salary != 'Договірна':
-            msg = bot.reply_to(
-                message, 'Заробітна плата повинна бути числом.Введіть заробітну плату(якщо 0 то договірна)')
-            bot.register_next_step_handler(msg, process_salary_step)
+            msg = bot.send_message(chat_id, 'Заробітна плата повинна бути числом')
+            bot.register_next_step_handler(msg, process_salary)
             return
-        if(salary == 0):
+        if salary == 0:
             offer.salary = 'Договірна'
         offer.salary = salary
-        msg = bot.reply_to(message, 'Введіть назву компанії',
-                           reply_markup=markup)
-        bot.register_next_step_handler(msg, process_company_name_step)
+        msg = bot.send_message(chat_id, 'Більш детальний опис вакансії:')
+        bot.register_next_step_handler(msg, description_progress)
+
     except Exception as e:
         print(Exception(e))
         bot.reply_to(message, 'oooops')
 
 
-def process_company_name_step(message):
-    try:
-        chat_id = message.chat.id
-        company_name = message.text
-        offer = Offer_dict[chat_id]
-        offer.company_name = company_name
-        msg = bot.reply_to(message, 'Опишіть вакансію більш детально')
-        bot.register_next_step_handler(msg, process_description_step)
-    except Exception as e:
-        print(Exception(e))
-        bot.reply_to(message, 'oooops')
-
-
-def process_description_step(message):
+def description_progress(message):
     try:
         chat_id = message.chat.id
         description = message.text
+        print(description)
         offer = Offer_dict[chat_id]
         offer.description = description
-
-        msg = bot.reply_to(
-            message, 'Введіть контактну інформацію для звізку з вами')
-        bot.register_next_step_handler(msg, process_contact_info_step)
+        msg = bot.send_message(chat_id, text='За детальною інформацією звертатися:')
+        bot.register_next_step_handler(msg, offer_contact_info)
 
     except Exception as e:
-        bot.reply_to(message, 'Опис вакансії ')
+        print(Exception(e))
+        bot.reply_to(message, 'oooops')
 
 
-def process_contact_info_step(message):
+def offer_contact_info(message):
     try:
         chat_id = message.chat.id
         contact_info = message.text
         offer = Offer_dict[chat_id]
         offer.contact_info = contact_info
-
-        keyboard = types.InlineKeyboardMarkup()
-        send_button = types.InlineKeyboardButton(
-            text="Верифікувати", callback_data='offer_verefication,'+str(message.from_user.id))
-        keyboard.add(send_button)
-
-        msg = bot.send_message(chat_id, text='Ваша пропозиція буде виглядати ось так:'
-                               + '\n\n💼 ' + offer.position
-                               + '\n💵 ' + offer.salary
-                               + '\n🏢 ' + offer.company_name
-                               + '\n📋 ' + offer.description
-                               + '\n📞 ' + offer.contact_info, reply_markup=keyboard)
+        markup = types.InlineKeyboardMarkup()
+        personal_consent = types.InlineKeyboardButton(text="✅ Даю згоду", callback_data='offer_verefication' + ',' + str(chat_id))
+        markup.add(personal_consent)
+        bot.send_message(chat_id, 'Згода на використання персональних даних', reply_markup=markup)
 
     except Exception as e:
         print(e)
@@ -237,11 +251,12 @@ def process_contact_info_step(message):
 def name_step(message):
     try:
         chat_id = message.chat.id
-        skills = message.text
-        summary = Summary(skills)
+        name = message.text
+        summary = Summary(name)
         summary_dict[chat_id] = summary
-        msg = bot.reply_to(
-            message, 'Вік:')
+        summary.name = name
+        msg = bot.send_message(
+            chat_id, 'Вік:')
         bot.register_next_step_handler(msg, age_step)
     except Exception as e:
         print(Exception(e))
@@ -273,7 +288,7 @@ def process_course_step(message):
         if course > 0 and course < 7:
             summary = summary_dict[chat_id]
             summary.course = str(course)
-            markup = types.InlineKeyboardMarkup()
+            markup = types.InlineKeyboardMarkup(row_width=1)
             yes = types.InlineKeyboardButton(text='Високий рівень', callback_data='english_know'+','+'Високий рівень')
             midl = types.InlineKeyboardButton(text='Середній рівень', callback_data='english_know' + ',' + 'Середній рівень')
             no = types.InlineKeyboardButton(text='Не володію',
@@ -297,7 +312,7 @@ def personal_qualities(message):
         print(personal_qualities)
         summary = summary_dict[chat_id]
         summary.personal_qualities = personal_qualities
-        msg = bot.reply_to(message, 'Інші навички:')
+        msg = bot.send_message(chat_id, 'Інші навички:')
         bot.register_next_step_handler(msg, another)
 
     except Exception as e:
@@ -312,7 +327,7 @@ def another(message):
         summary = summary_dict[chat_id]
         summary.another = another
         print(another)
-        msg = bot.reply_to(message, 'Досвід роботи:')
+        msg = bot.send_message(chat_id, 'Досвід роботи:')
         bot.register_next_step_handler(msg, experience)
 
     except Exception as e:
@@ -327,12 +342,13 @@ def experience(message):
         print(experience)
         summary = summary_dict[chat_id]
         summary.experience = experience
-        msg = bot.reply_to(message, 'Контактний телефон:')
+        msg = bot.send_message(chat_id, 'Контактний телефон:')
         bot.register_next_step_handler(msg, summary_contact_info)
 
     except Exception as e:
         print(traceback.format_exc())
         bot.reply_to(message, 'Помилка')
+
 
 def summary_contact_info(message):
     try:
@@ -341,7 +357,7 @@ def summary_contact_info(message):
         print(contact_info)
         summary = summary_dict[chat_id]
         summary.contact_info = contact_info
-        msg = bot.reply_to(message, 'Адреса електронної пошти:')
+        msg = bot.send_message(chat_id, 'Адреса електронної пошти:')
         bot.register_next_step_handler(msg, email_summary)
 
 
@@ -554,32 +570,87 @@ def contact_info_change_progress(message):
 # Функції для редагування резюме
 
 
-def skills_change_progress(message):
+def n_a_m_e_change(message):
     try:
         user_id = message.from_user.id
         chat_id = message.chat.id
         text = message.text
         change = collection_verification.find_one({'change_id': user_id})
         obj = change["_id"]
-        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"skills": text}})
+        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"name": text}})
         bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        skills_change = types.InlineKeyboardButton(
-            text="Мову", callback_data='skills_change,' + str(change['_id']))
+        summary = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        name_change = types.InlineKeyboardButton(
+            text="Прізвище, ім’я, по батькові", callback_data='n_a_m_e_change,' + str(summary['_id']))
+        age_change = types.InlineKeyboardButton(
+            text="Вік", callback_data='age_change,' + str(summary['_id']))
         course_change = types.InlineKeyboardButton(
-            text="Курс", callback_data='course_change,' + str(change['_id']))
-        first_name_last_name_change = types.InlineKeyboardButton(
-            text="Ім'я та прізвище", callback_data='name_last_change,' + str(change['_id']))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контакти", callback_data='scc,' + str(change['_id']))
-        end_change = types.InlineKeyboardButton(
-            text='Закінчити редагування', callback_data='summary_ch_end,' + str(obj))
-        keyboard.add(skills_change, course_change, first_name_last_name_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💻 ' + change_1['skills']
-                                    + '\n🎓 ' + change_1['course']
-                                    + '\n📋 ' + change_1['first_name_last_name']
-                                    + '\n📞 ' + change_1['contact_info'])
+            text="Курс", callback_data='course_change,' + str(summary['_id']))
+        personal_qualities_change = types.InlineKeyboardButton(
+            text="Особисті якості", callback_data='pers_quali,' + str(summary['_id']))
+        another = types.InlineKeyboardButton(
+            text="Інші навички", callback_data='another_change,' + str(summary['_id']))
+        experience = types.InlineKeyboardButton(
+            text="Досвід роботи", callback_data='experience_change,' + str(summary['_id']))
+        end = types.InlineKeyboardButton(
+            text='Закінчити редагування', callback_data='summary_ch_end,' + str(summary['_id']))
+        keyboard.add(name_change, age_change, course_change, personal_qualities_change, another, experience, end)
+        bot.send_message(chat_id, text='Прізвище, ім’я, по батькові: ' + summary['name']
+                                    + '\nВік: ' + summary['age']
+                                    + '\nФакультет: ' + summary['faculty']
+                                    + '\nСпеціальність: ' + summary['specialty']
+                                    + '\nКурс: ' + summary['course']
+                                    + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                                    + '\nОсобисті якості: ' + summary['personal_qualities']
+                                    + '\nІнші навички: ' + summary['another']
+                                    + '\nДосвід роботи: ' + summary['experience']
+                                    + '\nКонтактний телефон: ' + summary['contact_info']
+                                    + '\nАдреса електронної пошти: ' + summary['email'])
+        bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'біда')
+
+
+def age_change_progress(message):
+    try:
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+        text = message.text
+        change = collection_verification.find_one({'change_id': user_id})
+        obj = change["_id"]
+        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"age": text}})
+        bot.send_message(chat_id, text='Зміни внесено')
+        summary = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        name_change = types.InlineKeyboardButton(
+            text="Прізвище, ім’я, по батькові", callback_data='n_a_m_e_change,' + str(summary['_id']))
+        age_change = types.InlineKeyboardButton(
+            text="Вік", callback_data='age_change,' + str(summary['_id']))
+        course_change = types.InlineKeyboardButton(
+            text="Курс", callback_data='course_change,' + str(summary['_id']))
+        personal_qualities_change = types.InlineKeyboardButton(
+            text="Особисті якості", callback_data='pers_quali,' + str(summary['_id']))
+        another = types.InlineKeyboardButton(
+            text="Інші навички", callback_data='another_change,' + str(summary['_id']))
+        experience = types.InlineKeyboardButton(
+            text="Досвід роботи", callback_data='experience_change,' + str(summary['_id']))
+        end = types.InlineKeyboardButton(
+            text='Закінчити редагування', callback_data='summary_ch_end,' + str(summary['_id']))
+        keyboard.add(name_change, age_change, course_change, personal_qualities_change, another, experience, end)
+        bot.send_message(chat_id,  text='Прізвище, ім’я, по батькові: ' + summary['name']
+                                    + '\nВік: ' + summary['age']
+                                    + '\nФакультет: ' + summary['faculty']
+                                    + '\nСпеціальність: ' + summary['specialty']
+                                    + '\nКурс: ' + summary['course']
+                                    + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                                    + '\nОсобисті якості: ' + summary['personal_qualities']
+                                    + '\nІнші навички: ' + summary['another']
+                                    + '\nДосвід роботи: ' + summary['experience']
+                                    + '\nКонтактний телефон: ' + summary['contact_info']
+                                    + '\nАдреса електронної пошти: ' + summary['email'])
         bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
     except Exception as e:
@@ -596,23 +667,34 @@ def course_change_progress(message):
         obj = change["_id"]
         collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"course": text}})
         bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        skills_change = types.InlineKeyboardButton(
-            text="Мову", callback_data='skills_change,' + str(change['_id']))
+        summary = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        name_change = types.InlineKeyboardButton(
+            text="Прізвище, ім’я, по батькові", callback_data='n_a_m_e_change,' + str(summary['_id']))
+        age_change = types.InlineKeyboardButton(
+            text="Вік", callback_data='age_change,' + str(summary['_id']))
         course_change = types.InlineKeyboardButton(
-            text="Курс", callback_data='course_change,' + str(change['_id']))
-        first_name_last_name_change = types.InlineKeyboardButton(
-            text="Ім'я та прізвище", callback_data='name_last_change,' + str(change['_id']))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контакти", callback_data='scc,' + str(change['_id']))
-        end_change = types.InlineKeyboardButton(
-            text='Закінчити редагування', callback_data='summary_ch_end,' + str(obj))
-        keyboard.add(skills_change, course_change, first_name_last_name_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💻 ' + change_1['skills']
-                                    + '\n🎓 ' + change_1['course']
-                                    + '\n📋 ' + change_1['first_name_last_name']
-                                    + '\n📞 ' + change_1['contact_info'])
+            text="Курс", callback_data='course_change,' + str(summary['_id']))
+        personal_qualities_change = types.InlineKeyboardButton(
+            text="Особисті якості", callback_data='pers_quali,' + str(summary['_id']))
+        another = types.InlineKeyboardButton(
+            text="Інші навички", callback_data='another_change,' + str(summary['_id']))
+        experience = types.InlineKeyboardButton(
+            text="Досвід роботи", callback_data='experience_change,' + str(summary['_id']))
+        end = types.InlineKeyboardButton(
+            text='Закінчити редагування', callback_data='summary_ch_end,' + str(summary['_id']))
+        keyboard.add(name_change, age_change, course_change, personal_qualities_change, another, experience, end)
+        bot.send_message(chat_id, text='Прізвище, ім’я, по батькові: ' + summary['name']
+                                    + '\nВік: ' + summary['age']
+                                    + '\nФакультет: ' + summary['faculty']
+                                    + '\nСпеціальність: ' + summary['specialty']
+                                    + '\nКурс: ' + summary['course']
+                                    + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                                    + '\nОсобисті якості: ' + summary['personal_qualities']
+                                    + '\nІнші навички: ' + summary['another']
+                                    + '\nДосвід роботи: ' + summary['experience']
+                                    + '\nКонтактний телефон: ' + summary['contact_info']
+                                    + '\nАдреса електронної пошти: ' + summary['email'])
         bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
     except Exception as e:
@@ -620,32 +702,43 @@ def course_change_progress(message):
         bot.reply_to(message, 'біда')
 
 
-def first_name_last_name_change_progress(message):
+def pers_quali_change(message):
     try:
         user_id = message.from_user.id
         chat_id = message.chat.id
         text = message.text
         change = collection_verification.find_one({'change_id': user_id})
         obj = change["_id"]
-        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"first_name_last_name": text}})
+        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"personal_qualities": text}})
         bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        skills_change = types.InlineKeyboardButton(
-            text="Мову", callback_data='skills_change,' + str(change['_id']))
+        summary = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        name_change = types.InlineKeyboardButton(
+            text="Прізвище, ім’я, по батькові", callback_data='n_a_m_e_change,' + str(summary['_id']))
+        age_change = types.InlineKeyboardButton(
+            text="Вік", callback_data='age_change,' + str(summary['_id']))
         course_change = types.InlineKeyboardButton(
-            text="Курс", callback_data='course_change,' + str(change['_id']))
-        first_name_last_name_change = types.InlineKeyboardButton(
-            text="Ім'я та прізвище", callback_data='name_last_change,' + str(change['_id']))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контакти", callback_data='scc,' + str(change['_id']))
-        end_change = types.InlineKeyboardButton(
-            text='Закінчити редагування', callback_data='summary_ch_end,' + str(obj))
-        keyboard.add(skills_change, course_change, first_name_last_name_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💻 ' + change_1['skills']
-                                    + '\n🎓 ' + change_1['course']
-                                    + '\n📋 ' + change_1['first_name_last_name']
-                                    + '\n📞 ' + change_1['contact_info'])
+            text="Курс", callback_data='course_change,' + str(summary['_id']))
+        personal_qualities_change = types.InlineKeyboardButton(
+            text="Особисті якості", callback_data='pers_quali,' + str(summary['_id']))
+        another = types.InlineKeyboardButton(
+            text="Інші навички", callback_data='another_change,' + str(summary['_id']))
+        experience = types.InlineKeyboardButton(
+            text="Досвід роботи", callback_data='experience_change,' + str(summary['_id']))
+        end = types.InlineKeyboardButton(
+            text='Закінчити редагування', callback_data='summary_ch_end,' + str(summary['_id']))
+        keyboard.add(name_change, age_change, course_change, personal_qualities_change, another, experience, end)
+        bot.send_message(chat_id, text='Прізвище, ім’я, по батькові: ' + summary['name']
+                                    + '\nВік: ' + summary['age']
+                                    + '\nФакультет: ' + summary['faculty']
+                                    + '\nСпеціальність: ' + summary['specialty']
+                                    + '\nКурс: ' + summary['course']
+                                    + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                                    + '\nОсобисті якості: ' + summary['personal_qualities']
+                                    + '\nІнші навички: ' + summary['another']
+                                    + '\nДосвід роботи: ' + summary['experience']
+                                    + '\nКонтактний телефон: ' + summary['contact_info']
+                                    + '\nАдреса електронної пошти: ' + summary['email'])
         bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
     except Exception as e:
@@ -653,32 +746,86 @@ def first_name_last_name_change_progress(message):
         bot.reply_to(message, 'біда')
 
 
-def summary_contact_change(message):
+def another_change_progress(message):
     try:
         user_id = message.from_user.id
         chat_id = message.chat.id
         text = message.text
         change = collection_verification.find_one({'change_id': user_id})
         obj = change["_id"]
-        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"contact_info": text}})
+        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"another": text}})
         bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        skills_change = types.InlineKeyboardButton(
-            text="Мову", callback_data='skills_change,' + str(change['_id']))
+        summary = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        name_change = types.InlineKeyboardButton(
+            text="Прізвище, ім’я, по батькові", callback_data='n_a_m_e_change,' + str(summary['_id']))
+        age_change = types.InlineKeyboardButton(
+            text="Вік", callback_data='age_change,' + str(summary['_id']))
         course_change = types.InlineKeyboardButton(
-            text="Курс", callback_data='course_change,' + str(change['_id']))
-        first_name_last_name_change = types.InlineKeyboardButton(
-            text="Ім'я та прізвище", callback_data='name_last_change,' + str(change['_id']))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контакти", callback_data='scc,' + str(change['_id']))
-        end_change = types.InlineKeyboardButton(
-            text='Закінчити редагування', callback_data='summary_ch_end,' + str(obj))
-        keyboard.add(skills_change, course_change, first_name_last_name_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💻 ' + change_1['skills']
-                                    + '\n🎓 ' + change_1['course']
-                                    + '\n📋 ' + change_1['first_name_last_name']
-                                    + '\n📞 ' + change_1['contact_info'])
+            text="Курс", callback_data='course_change,' + str(summary['_id']))
+        personal_qualities_change = types.InlineKeyboardButton(
+            text="Особисті якості", callback_data='pers_quali,' + str(summary['_id']))
+        another = types.InlineKeyboardButton(
+            text="Інші навички", callback_data='another_change,' + str(summary['_id']))
+        experience = types.InlineKeyboardButton(
+            text="Досвід роботи", callback_data='experience_change,' + str(summary['_id']))
+        end = types.InlineKeyboardButton(
+            text='Закінчити редагування', callback_data='summary_ch_end,' + str(summary['_id']))
+        keyboard.add(name_change, age_change, course_change, personal_qualities_change, another, experience, end)
+        bot.send_message(chat_id, text='Прізвище, ім’я, по батькові: ' + summary['name']
+                                    + '\nВік: ' + summary['age']
+                                    + '\nФакультет: ' + summary['faculty']
+                                    + '\nСпеціальність: ' + summary['specialty']
+                                    + '\nКурс: ' + summary['course']
+                                    + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                                    + '\nОсобисті якості: ' + summary['personal_qualities']
+                                    + '\nІнші навички: ' + summary['another']
+                                    + '\nДосвід роботи: ' + summary['experience']
+                                    + '\nКонтактний телефон: ' + summary['contact_info']
+                                    + '\nАдреса електронної пошти: ' + summary['email'])
+        bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'біда')
+
+def experience_change_progress(message):
+    try:
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+        text = message.text
+        change = collection_verification.find_one({'change_id': user_id})
+        obj = change["_id"]
+        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"experience": text}})
+        bot.send_message(chat_id, text='Зміни внесено')
+        summary = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        name_change = types.InlineKeyboardButton(
+            text="Прізвище, ім’я, по батькові", callback_data='n_a_m_e_change,' + str(summary['_id']))
+        age_change = types.InlineKeyboardButton(
+            text="Вік", callback_data='age_change,' + str(summary['_id']))
+        course_change = types.InlineKeyboardButton(
+            text="Курс", callback_data='course_change,' + str(summary['_id']))
+        personal_qualities_change = types.InlineKeyboardButton(
+            text="Особисті якості", callback_data='pers_quali,' + str(summary['_id']))
+        another = types.InlineKeyboardButton(
+            text="Інші навички", callback_data='another_change,' + str(summary['_id']))
+        experience = types.InlineKeyboardButton(
+            text="Досвід роботи", callback_data='experience_change,' + str(summary['_id']))
+        end = types.InlineKeyboardButton(
+            text='Закінчити редагування', callback_data='summary_ch_end,' + str(summary['_id']))
+        keyboard.add(name_change, age_change, course_change, personal_qualities_change, another, experience, end)
+        bot.send_message(chat_id, text='Прізвище, ім’я, по батькові: ' + summary['name']
+                                       + '\nВік: ' + summary['age']
+                                       + '\nФакультет: ' + summary['faculty']
+                                       + '\nСпеціальність: ' + summary['specialty']
+                                       + '\nКурс: ' + summary['course']
+                                       + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                                       + '\nОсобисті якості: ' + summary['personal_qualities']
+                                       + '\nІнші навички: ' + summary['another']
+                                       + '\nДосвід роботи: ' + summary['experience']
+                                       + '\nКонтактний телефон: ' + summary['contact_info']
+                                       + '\nАдреса електронної пошти: ' + summary['email'])
         bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
     except Exception as e:
@@ -756,17 +903,17 @@ def send_to_channel(call):
 
         elif call.data == 'new_summary':
             chat_id = call.message.chat.id
-            msg = bot.edit_message_text(
-                chat_id=chat_id, message_id=call.message.message_id, text='Прізвище, ім’я, по батькові:')
+            msg = bot.send_message(
+                chat_id=chat_id, text='Прізвище, ім’я, по батькові:')
 
             bot.register_next_step_handler(msg, name_step)
 
         elif call.data == 'new_offer':
             chat_id = call.message.chat.id
-            msg = bot.edit_message_text(
-                chat_id=chat_id, message_id=call.message.message_id, text='Введіть будь ласка посаду:')
-
-            bot.register_next_step_handler(msg, process_position_step)
+            msg = bot.send_message(
+                chat_id=chat_id, text='Назва компанії/установи/організації:')
+            bot.register_next_step_handler(msg, company_name)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
 
         elif 'offer_verefication' in call.data:
             data = call.data.split(',')
@@ -775,7 +922,7 @@ def send_to_channel(call):
             offer = Offer_dict[chat_id]
             print('User id id verif button'+str(call.message.from_user.id))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text='\nПісля верифікації її можна буде переглянути в каналі\n\n' + channelForOffer)
+                                  text='\nВаше резюме прийнято для обробки та перевірки. Очікуйте на повідомлення')
             keyboard = types.InlineKeyboardMarkup()
             approve = types.InlineKeyboardButton(
                 text="Підтвердити", callback_data='offer_approve,'+str(chat_id)+','+str(user_id))
@@ -784,18 +931,30 @@ def send_to_channel(call):
             change = types.InlineKeyboardButton(
                 text='Редагувати', callback_data='offer_change,')
             keyboard.add(approve, cancel, change)
-            message_save = bot.send_message(chat_id=privateChatId, text='💼 ' + offer.position
-                             + '\n💵 ' + offer.salary
-                             + '\n🏢 ' + offer.company_name
-                             + '\n📋 ' + offer.description
-                             + '\n📞 ' + offer.contact_info, reply_markup=keyboard)
+            message_save = bot.send_message(chat_id=privateChatId, text='Назва компанії/установи/організації: ' + offer.comp_name
+                             + '\nВакансія: ' + offer.vacantion
+                             + '\nЗакінчена вища освіта: ' + offer.high_school
+                             + '\nСпеціальність:  ' + offer.direction
+                             + '\nЗнання англійської мови: ' + offer.english
+                             + '\nІнші вимоги: ' + offer.other
+                             + '\nОфіційне працевлаштування: ' + offer.official_work
+                             + '\nМожливість працювати віддалено: ' + offer.remote_job
+                             + '\nЗаробітна плата: ' + offer.salary
+                             + '\nБільш детальний опис вакансії: ' + offer.description
+                             + '\nЗа детальною інформацією звертатися: ' + offer.contact_info, reply_markup=keyboard)
 
             check_connections_with_db()
             offer_to_db = {
                 'user_id': user_id,
-                'position': offer.position,
+                'company_name': offer.comp_name,
+                'vacantion': offer.vacantion,
+                'high_school': offer.high_school,
+                'direction': offer.direction,
+                'english': offer.english,
+                'other': offer.other,
+                'official_work': offer.official_work,
+                'remote_job': offer.remote_job,
                 'salary': offer.salary,
-                'company_name': offer.company_name,
                 'description': offer.description,
                 'contact_info': offer.contact_info,
                 'message_id': message_save.message_id
@@ -1040,22 +1199,22 @@ def send_to_channel(call):
             change = types.InlineKeyboardButton(
                 text='Редагувати', callback_data='summary_change,')
             keyboard.add(approve, cancel, change)
-            message_summary_save = bot.send_message(chat_id=privateChatId, text='Прізвище, ім’я, по батькові:' + summary.skills
+            message_summary_save = bot.send_message(chat_id=privateChatId, text='Прізвище, ім’я, по батькові:' + summary.name
                              + '\nВік: ' + summary.age
-                             + '\nФакультет:' + summary.faculty
-                             + '\nСпеціальність:' + summary.specialty
-                             + '\nКурс:' + summary.course
-                             + '\nЗнання англійської мови:' + summary.english_know_lvl
-                             + '\nОсобисті якості:' + summary.personal_qualities
-                             + '\nІнші навички:' + summary.another
-                             + '\nДосвід роботи:' + summary.experience
-                             + '\nКонтактний телефон:' + summary.contact_info
-                             + '\nАдреса електронної пошти:' + summary.email, reply_markup=keyboard)
+                             + '\nФакультет: ' + summary.faculty
+                             + '\nСпеціальність: ' + summary.specialty
+                             + '\nКурс: ' + summary.course
+                             + '\nЗнання англійської мови: ' + summary.english_know_lvl
+                             + '\nОсобисті якості: ' + summary.personal_qualities
+                             + '\nІнші навички: ' + summary.another
+                             + '\nДосвід роботи: ' + summary.experience
+                             + '\nКонтактний телефон: ' + summary.contact_info
+                             + '\nАдреса електронної пошти: ' + summary.email, reply_markup=keyboard)
 
             check_connections_with_db()
             summary_to_db = {
                 'user_id': chat_id,
-                'name': summary.skills,
+                'name': summary.name,
                 'age': summary.age,
                 'faculty': summary.faculty,
                 'specialty': summary.specialty,
@@ -1079,8 +1238,7 @@ def send_to_channel(call):
             chat_id = int(data[1])
             user_id = int(data[2])
             link = bot.create_chat_invite_link(channelForOffer, member_limit=1)
-            c = collection_summary.find_one({'user_id': str(user_id)})
-            print(summary['skills'])
+            c = collection_summary.find_one({'user_id': int(user_id)})
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
             student_button = types.InlineKeyboardButton(
@@ -1098,18 +1256,32 @@ def send_to_channel(call):
                 bot.send_message(
                     chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
 
-            message_save = bot.send_message(chat_id=channelForSummary, text='\n\n💻 ' + summary['skills']
-                             + '\n🎓 ' + summary['course']
-                             + '\n📋 ' + summary['first_name_last_name']
-                             + '\n📞 ' + summary['contact_info'])
+            message_save = bot.send_message(chat_id=channelForSummary, text='Прізвище, ім’я, по батькові:' + summary['name']
+                             + '\nВік: ' + summary['age']
+                             + '\nФакультет:' + summary['faculty']
+                             + '\nСпеціальність:' + summary['specialty']
+                             + '\nКурс:' + summary['course']
+                             + '\nЗнання англійської мови:' + summary['english_know_lvl']
+                             + '\nОсобисті якості:' + summary['personal_qualities']
+                             + '\nІнші навички:' + summary['another']
+                             + '\nДосвід роботи:' + summary['experience']
+                             + '\nКонтактний телефон:' + summary['contact_info']
+                             + '\nАдреса електронної пошти:' + summary['email'])
 
             check_connections_with_db()
             summary_to_db = {
-                'user_id': summary['user_id'],
-                'skills': summary['skills'],
+                'user_id': chat_id,
+                'name':  summary['name'],
+                'age': summary['age'],
+                'faculty': summary['faculty'],
+                'specialty': summary['specialty'],
                 'course': summary['course'],
-                'first_name_last_name': summary['first_name_last_name'],
+                'english_know_lvl': summary['english_know_lvl'],
+                'personal_qualities': summary['personal_qualities'],
+                'another': summary['another'],
+                'experience':  summary['experience'],
                 'contact_info': summary['contact_info'],
+                'email':  summary['email'],
                 'message_id': message_save.message_id
             }
             # Send offer to db
@@ -1118,10 +1290,12 @@ def send_to_channel(call):
 
         elif 'summary_cancel' in call.data:
             data = call.data.split(',')
+            message_id = call.message.message_id
             chat_id = int(data[1])
-            summary = summary_dict[chat_id]
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
+            c = collection_verification.find_one({'message_id': message_id})
+            id_object = c['_id']
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
                 text="Переглянути можливі вакансії", callback_data='get_list_offer')
@@ -1134,72 +1308,96 @@ def send_to_channel(call):
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             bot.send_message(
                 chat_id=chat_id, text='Ваше резюме відхилино!', reply_markup=reply_markup)
+            collection_verification.delete_one({"_id": ObjectId("{}".format(id_object))})
+
 
         elif 'summary_change' in call.data:  # запускає редагування резюме)
             chat = call.from_user.id
             message_id = call.message.message_id
-            print(message_id)
-            change = collection_verification.find_one({'message_id': message_id})
-            keyboard = types.InlineKeyboardMarkup()
-            skills_change = types.InlineKeyboardButton(
-                text="Мову програмування", callback_data='skills_change,' + str(change['_id']))
+            summary = collection_verification.find_one({'message_id': message_id})
+            keyboard = types.InlineKeyboardMarkup(row_width=1)
+            name_change = types.InlineKeyboardButton(
+                text="Прізвище, ім’я, по батькові", callback_data='n_a_m_e_change,' + str(summary['_id']))
+            age_change = types.InlineKeyboardButton(
+                text="Вік", callback_data='age_change,' + str(summary['_id']))
             course_change = types.InlineKeyboardButton(
-                text="Курсу", callback_data='course_change,' + str(change['_id']))
-            first_name_last_name_change = types.InlineKeyboardButton(
-                text="Ім'я та прізвище", callback_data='name_last_change,' + str(change['_id']))
-            contact_info_change = types.InlineKeyboardButton(
-                text="Контакти", callback_data='scc,' + str(change['_id']))
-            keyboard.add(skills_change, course_change, first_name_last_name_change, contact_info_change)
-            bot.send_message(chat, text='💻 ' + change['skills']
-                                        + '\n🎓 ' + change['course']
-                                        + '\n📋 ' + change['first_name_last_name']
-                                        + '\n📞 ' + change['contact_info'])
+                text="Курс", callback_data='course_change,' + str(summary['_id']))
+            personal_qualities_change = types.InlineKeyboardButton(
+                text="Особисті якості", callback_data='pers_quali,' + str(summary['_id']))
+            another = types.InlineKeyboardButton(
+                text="Інші навички", callback_data='another_change,' + str(summary['_id']))
+            experience = types.InlineKeyboardButton(
+                text="Досвід роботи", callback_data='experience_change,' + str(summary['_id']))
+            keyboard.add(name_change, age_change, course_change, personal_qualities_change, another, experience)
+            bot.send_message(chat, text='Прізвище, ім’я, по батькові: ' + summary['name']
+                             + '\nВік: ' + summary['age']
+                             + '\nФакультет: ' + summary['faculty']
+                             + '\nСпеціальність: ' + summary['specialty']
+                             + '\nКурс: ' + summary['course']
+                             + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                             + '\nОсобисті якості: ' + summary['personal_qualities']
+                             + '\nІнші навички: ' + summary['another']
+                             + '\nДосвід роботи: ' + summary['experience']
+                             + '\nКонтактний телефон: ' + summary['contact_info']
+                             + '\nАдреса електронної пошти: ' + summary['email'])
             bot.send_message(chat, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
-        elif 'skills_change' in call.data:
+        elif 'n_a_m_e_change' in call.data:
             user_id = call.message.chat.id
             data = call.data.split(',')
             obj = data[1]
-            print(user_id)
-            print(obj)
             collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
             chat_id = call.message.chat.id
-            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Введіть мову:')
-            bot.register_next_step_handler(msg, skills_change_progress)
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Прізвище, ім’я, по батькові:')
+            bot.register_next_step_handler(msg, n_a_m_e_change)
+
+        elif 'age_change' in call.data:
+            user_id = call.message.chat.id
+            data = call.data.split(',')
+            obj = data[1]
+            collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
+            chat_id = call.message.chat.id
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Вік:')
+            bot.register_next_step_handler(msg, age_change_progress)
 
         elif 'course_change' in call.data:
             user_id = call.message.chat.id
             data = call.data.split(',')
             obj = data[1]
-            print(user_id)
-            print(obj)
             collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
             chat_id = call.message.chat.id
-            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Введіть курс:')
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text="Курс:")
             bot.register_next_step_handler(msg, course_change_progress)
 
-        elif 'name_last_change' in call.data:
+        elif 'pers_quali' in call.data:  # редагування контактів студента (НАЗВУ НЕ МІНЯТИ)
             user_id = call.message.chat.id
             data = call.data.split(',')
             obj = data[1]
-            print(user_id)
-            print(obj)
-            collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
-            chat_id = call.message.chat.id
-            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text="Введіть ім'я та прізвище:")
-            bot.register_next_step_handler(msg, first_name_last_name_change_progress)
-
-        elif 'scc' in call.data:  # редагування контактів студента (НАЗВУ НЕ МІНЯТИ)
-            user_id = call.message.chat.id
-            data = call.data.split(',')
-            obj = data[1]
-            print(user_id)
-            print(obj)
             collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
             chat_id = call.message.chat.id
             msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                                        text="Введіть контакти:")
-            bot.register_next_step_handler(msg, summary_contact_change)
+                                        text="Особисті якості:")
+            bot.register_next_step_handler(msg, pers_quali_change)
+
+        elif 'another_change' in call.data:
+            user_id = call.message.chat.id
+            data = call.data.split(',')
+            obj = data[1]
+            collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
+            chat_id = call.message.chat.id
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                                        text="Інші навички:")
+            bot.register_next_step_handler(msg, another_change_progress)
+
+        elif 'experience_change' in call.data:
+            user_id = call.message.chat.id
+            data = call.data.split(',')
+            obj = data[1]
+            collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
+            chat_id = call.message.chat.id
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
+                                        text="Досвід роботи:")
+            bot.register_next_step_handler(msg, experience_change_progress)
 
         elif 'summary_ch_end' in call.data:  # закінчує редагування резюме
             data = call.data.split(',')
@@ -1208,6 +1406,9 @@ def send_to_channel(call):
             user_id = summary_b['user_id']
             print('User id id verif button' + str(call.message.from_user.id))
             bot.delete_message(chat_id=privateChatId, message_id=summary_b['message_id'])
+            bot.delete_message(chat_id=call.message.chat.id,
+                               message_id=call.message.message_id)
+            bot.send_message(chat_id=call.message.chat.id, text='Резюме відредаговано')
             keyboard = types.InlineKeyboardMarkup()
             approve = types.InlineKeyboardButton(
                 text="Підтвердити", callback_data='end_sum_ch,' + str(user_id) + ',' + str(id_object))
@@ -1216,11 +1417,17 @@ def send_to_channel(call):
             change = types.InlineKeyboardButton(
                 text='Редагувати', callback_data='summary_change,')
             keyboard.add(approve, cancel, change)
-            message_save = bot.send_message(privateChatId, text='💻 ' + summary_b['skills']
-                                                                + '\n🎓 ' + summary_b['course']
-                                                                + '\n📋 ' + summary_b['first_name_last_name']
-                                                                + '\n📞 ' + summary_b['contact_info'],
-                                            reply_markup=keyboard)
+            message_save = bot.send_message(privateChatId, text='Прізвище, ім’я, по батькові: ' + summary_b['name']
+                                    + '\nВік: ' + summary_b['age']
+                                    + '\nФакультет: ' + summary_b['faculty']
+                                    + '\nСпеціальність: ' + summary_b['specialty']
+                                    + '\nКурс: ' + summary_b['course']
+                                    + '\nЗнання англійської мови: ' + summary_b['english_know_lvl']
+                                    + '\nОсобисті якості: ' + summary_b['personal_qualities']
+                                    + '\nІнші навички: ' + summary_b['another']
+                                    + '\nДосвід роботи: ' + summary_b['experience']
+                                    + '\nКонтактний телефон: ' + summary_b['contact_info']
+                                    + '\nАдреса електронної пошти: ' + summary_b['email'], reply_markup=keyboard)
             collection_verification.update_one({"_id": ObjectId("{}".format(id_object))},
                                                {'$set': {"message_id": message_save.message_id}})
 
@@ -1230,7 +1437,7 @@ def send_to_channel(call):
             chat_id = int(data[1])
             user_id = int(data[1])
             obj = data[2]
-            summary_vacantion = collection_verification.find_one({'_id': ObjectId("{}".format(obj))})
+            summary = collection_verification.find_one({'_id': ObjectId("{}".format(obj))})
             print(user_id, chat_id)
             link = bot.create_chat_invite_link(channelForOffer, member_limit=1)
             c = collection_summary.find_one({'user_id': str(user_id)})
@@ -1249,27 +1456,38 @@ def send_to_channel(call):
 
             if c is None:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваше резюме опубліковано!' + str(link.invite_link),
+                    chat_id=chat_id, text='Ваше резюме прийнято!' + str(link.invite_link),
                     reply_markup=reply_markup)
             else:
                 bot.send_message(
                     chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
-            message_offer_save = bot.send_message(chat_id=channelForSummary, text='💻 ' + summary_vacantion["skills"]
-                                                                                + '\n🎓 ' + summary_vacantion[
-                                                                                    "course"]
-                                                                                + '\n📋 ' + summary_vacantion[
-                                                                                    'first_name_last_name']
-                                                                                + '\n📞 ' + summary_vacantion[
-                                                                                    'contact_info'])
+            message_save = bot.send_message(chat_id=channelForSummary, text='Прізвище, ім’я, по батькові: ' + summary['name']
+                             + '\nВік: ' + summary['age']
+                             + '\nФакультет: ' + summary['faculty']
+                             + '\nСпеціальність: ' + summary['specialty']
+                             + '\nКурс: ' + summary['course']
+                             + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                             + '\nОсобисті якості: ' + summary['personal_qualities']
+                             + '\nІнші навички: ' + summary['another']
+                             + '\nДосвід роботи: ' + summary['experience']
+                             + '\nКонтактний телефон: ' + summary['contact_info']
+                             + '\nАдреса електронної пошти: ' + summary['email'])
 
             check_connections_with_db()
             summary_to_db = {
-                'user_id': summary_vacantion['user_id'],
-                'skills': summary_vacantion['skills'],
-                'course': summary_vacantion['course'],
-                'first_name_last_name': summary_vacantion['first_name_last_name'],
-                'contact_info': summary_vacantion['contact_info'],
-                'message_id': message_offer_save.message_id
+                'user_id': chat_id,
+                'name':  summary['name'],
+                'age': summary['age'],
+                'faculty': summary['faculty'],
+                'specialty': summary['specialty'],
+                'course': summary['course'],
+                'english_know_lvl': summary['english_know_lvl'],
+                'personal_qualities': summary['personal_qualities'],
+                'another': summary['another'],
+                'experience':  summary['experience'],
+                'contact_info': summary['contact_info'],
+                'email':  summary['email'],
+                'message_id': message_save.message_id
             }
             # Send offer to db
             collection_summary.insert_one(summary_to_db)
@@ -1371,12 +1589,11 @@ def send_to_channel(call):
         elif call.data == 'summary_cal':  # видає резюме для видалення
             chat_id = call.message.chat.id
             user_id = call.from_user.id
-            summary_search_list = collection_summary.find({'user_id': str(user_id)})
+            summary_search_list = collection_summary.find({'user_id': int(user_id)})
             for x in summary_search_list:
                 keyboard_summary = types.InlineKeyboardMarkup()
-                edit_summary = types.InlineKeyboardButton(text='Змінити ✏', callback_data='edit_summary,'+str(x['_id'])+','+str(x['message_id']))
                 delete_summary = types.InlineKeyboardButton(text='Видалити❌', callback_data='delete_summary,'+str(x['_id'])+','+str(x['message_id']))
-                keyboard_summary.add(edit_summary, delete_summary)
+                keyboard_summary.add(delete_summary)
                 bot.send_message(chat_id, text=form_for_summary_list(x), reply_markup=keyboard_summary)
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
@@ -1429,6 +1646,8 @@ def send_to_channel(call):
                     for x in value:
                         markup.add(types.InlineKeyboardButton(text=x, callback_data='spec,' + str(x[0:29])))
             bot.send_message(chat_id, text='Спеціальність:', reply_markup=markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
 
         elif 'spec,' in call.data:
             chat_id = call.message.chat.id
@@ -1442,8 +1661,9 @@ def send_to_channel(call):
                         a = x
             print(a)
             summary.specialty = a
-            msg = bot.reply_to(call.message, text='Курс:')
+            msg = bot.send_message(chat_id, text='Курс:')
             bot.register_next_step_handler(msg, process_course_step)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
 
         elif 'english_know' in call.data:
             chat_id = call.message.chat.id
@@ -1451,8 +1671,98 @@ def send_to_channel(call):
             print(english_know_lvl)
             summary = summary_dict[chat_id]
             summary.english_know_lvl = english_know_lvl[1]
-            msg = bot.reply_to(call.message, 'Особисті якості:')
+            msg = bot.send_message(chat_id, 'Особисті якості:')
             bot.register_next_step_handler(msg, personal_qualities)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
+# offer
+        elif 'high_school' in call.data:
+            chat_id = call.message.chat.id
+            data = call.data.split(',')
+            high_school = data[1]
+            offer = Offer_dict[chat_id]
+            offer.high_school = high_school
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            direction_yes = types.InlineKeyboardButton(text='Так', callback_data='direction_yes')
+            direction_no = types.InlineKeyboardButton(text='Ні', callback_data='direction_no')
+            markup.add(direction_yes, direction_no)
+            bot.send_message(chat_id, text='Вимоги до кандидатів:\nСпеціальність:', reply_markup=markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
+        elif call.data == 'direction_yes':
+            chat_id = call.message.chat.id
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            for keys in direction_and_spec.keys():
+                markup.add(types.InlineKeyboardButton(text=keys, callback_data='desc_off' + ',' + str(keys[0:25])))
+            bot.send_message(chat_id, text='Напрямок:', reply_markup=markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
+        elif 'desc_off' in call.data:
+            chat_id = call.message.chat.id
+            offer = Offer_dict[chat_id]
+            data = call.data.split(',')
+            desc = data[1]
+            for x in direction_and_spec.keys():
+                if desc in x:
+                    offer.direction = x
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            eng_lvl_top = types.InlineKeyboardButton(text='Високий рівень',
+                                                     callback_data='eng_lvl' + ',' + 'Високий рівень')
+            eng_lvl_mid = types.InlineKeyboardButton(text='Середній рівень',
+                                                     callback_data='eng_lvl' + ',' + 'Середній рівень')
+            eng_lvl_no = types.InlineKeyboardButton(text='Не потрібно',
+                                                    callback_data='eng_lvl' + ',' + 'Не потрібно')
+            markup.add(eng_lvl_top, eng_lvl_mid, eng_lvl_no)
+            bot.send_message(chat_id, text='Вимоги до кандидатів:\nЗнання англійської мови:', reply_markup=markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
+        elif call.data == 'direction_no':
+            chat_id = call.message.chat.id
+            offer = Offer_dict[chat_id]
+            offer.direction = 'Ні'
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            eng_lvl_top = types.InlineKeyboardButton(text='Високий рівень',
+                                                     callback_data='eng_lvl' + ',' + 'Високий рівень')
+            eng_lvl_mid = types.InlineKeyboardButton(text='Середній рівень',
+                                                     callback_data='eng_lvl' + ',' + 'Середній рівень')
+            eng_lvl_no = types.InlineKeyboardButton(text='Не потрібно',
+                                                    callback_data='eng_lvl' + ',' + 'Не потрібно')
+            markup.add(eng_lvl_top, eng_lvl_mid, eng_lvl_no)
+            bot.send_message(chat_id, text='Вимоги до кандидатів:\nЗнання англійської мови:', reply_markup=markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
+        elif 'eng_lvl' in call.data:
+            chat_id = call.message.chat.id
+            offer = Offer_dict[chat_id]
+            data = call.data.split(',')
+            offer.english = data[1]
+            msg = bot.send_message(chat_id, text='Вимоги до кандидатів:\nІнші:(вкажіть самостійно)')
+            bot.register_next_step_handler(msg, othe_progress)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
+        elif 'official_work' in call.data:
+            chat_id = call.message.chat.id
+            data = call.data.split(',')
+            offer = Offer_dict[chat_id]
+            offer.official_work = data[1]
+            markup = types.InlineKeyboardMarkup(row_width=1)
+            remote_job_yes = types.InlineKeyboardButton(text='Так', callback_data='remote_job' + ',' + 'Так')
+            remote_job_no = types.InlineKeyboardButton(text='Ні', callback_data='remote_job' + ',' + 'Ні')
+            markup.add(remote_job_yes, remote_job_no)
+            bot.send_message(chat_id, text='Можливість працювати віддалено:', reply_markup=markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+
+        elif 'remote_job' in call.data:
+            chat_id = call.message.chat.id
+            data = call.data.split(',')
+            offer = Offer_dict[chat_id]
+            offer.remote_job = data[1]
+            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
+            markup.add('Договірна')
+            msg = bot.send_message(chat_id, text='Заробітна плата:', reply_markup=markup)
+            bot.register_next_step_handler(msg, process_salary)
+
+
 
         else:
             print('wrong callback')
@@ -1467,12 +1777,21 @@ def send_to_channel(call):
 
 
 def form_for_summary_list(summary):
-    skills = summary['skills']
+    name = summary['name']
+    age = summary['course']
+    faculty = summary['faculty']
+    specialty = summary['specialty']
     course = summary['course']
-    first_name_last_name = summary['first_name_last_name']
+    english_know_lvl = summary['english_know_lvl']
+    perso = summary['personal_qualities']
+    another = summary['another']
+    experience = summary['experience']
     contact_info = summary['contact_info']
+    email = summary['email']
+    return ('Прізвище, ім’я, по батькові: ' + name + '\nВік: ' + age + '\nФакультет: ' + faculty + '\nСпеціальність: ' + specialty
+            + '\nКурс: ' + course + '\nЗнання англійської мови: ' + english_know_lvl + '\nОсобисті якості: ' + str(perso)
+            + '\nІнші навички: ' + another + '\nДосвід роботи: ' + experience + '\nКонтактний телефон: ' + contact_info + '\nАдреса електронної пошти: ' + str(email))
 
-    return '💻 ' + skills + '\n🎓 ' + course + '\n📋 ' + first_name_last_name + '\n📞 ' + contact_info,
 
 
 def form_for_offer_list(ofr):
