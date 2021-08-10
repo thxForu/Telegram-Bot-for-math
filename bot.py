@@ -934,7 +934,7 @@ def send_to_channel(call):
             message_save = bot.send_message(chat_id=privateChatId, text='Назва компанії/установи/організації: ' + offer.comp_name
                              + '\nВакансія: ' + offer.vacantion
                              + '\nЗакінчена вища освіта: ' + offer.high_school
-                             + '\nСпеціальність:  ' + offer.direction
+                             + '\nСпеціальність: ' + offer.direction
                              + '\nЗнання англійської мови: ' + offer.english
                              + '\nІнші вимоги: ' + offer.other
                              + '\nОфіційне працевлаштування: ' + offer.official_work
