@@ -183,7 +183,7 @@ def othe_progress(message):
         official_work_yes = types.InlineKeyboardButton(text='Так', callback_data='official_work' + ',' + 'Так')
         official_work_no = types.InlineKeyboardButton(text='Ні', callback_data='official_work' + ',' + 'Ні')
         markup.add(official_work_yes, official_work_no)
-        bot.send_message(chat_id, text='Вимоги до кандидатів:\nЗакінчена вища освіта:', reply_markup=markup)
+        bot.send_message(chat_id, text='Вимоги до кандидатів:\nОфіційне працевлаштування:', reply_markup=markup)
 
     except Exception as e:
         print(Exception(e))
@@ -384,35 +384,81 @@ def email_summary(message):
 
 
 # Функції для редагування вакансій
-def position_change_progress(message):
+def comp_change_progress(message):
     try:
         user_id = message.from_user.id
         chat_id = message.chat.id
         text = message.text
         change = collection_verification.find_one({'change_id': user_id})
         obj = change["_id"]
-        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"position": text}})
+        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"company_name": text}})
         bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        position_change = types.InlineKeyboardButton(
-            text="Посаду", callback_data='position_change,'+str(obj))
-        salary_change = types.InlineKeyboardButton(
-            text="Заробітну плату", callback_data='salary_change,'+str(obj))
-        name_change = types.InlineKeyboardButton(
-            text="Назву компанії", callback_data='name_change,'+str(obj))
-        description_change = types.InlineKeyboardButton(
-            text="Опис компанії", callback_data='description_change,'+str(obj))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контактні дані", callback_data='contact_info_change,'+str(obj))
+        offer = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        comp_name = types.InlineKeyboardButton(
+            text="Назву компанії/установи/організації", callback_data='comp_name_change,' + str(obj))
+        vac = types.InlineKeyboardButton(
+            text="Вакансію", callback_data='vac_change,' + str(obj))
+        salary = types.InlineKeyboardButton(
+            text="Заробітну плату", callback_data='salary_change,' + str(obj))
+        description = types.InlineKeyboardButton(
+            text="Опис вакансії", callback_data='description_change,' + str(obj))
         end_change = types.InlineKeyboardButton(
             text='Закінчити редагування', callback_data='offer_ch_end,'+str(obj))
-        keyboard.add(position_change, salary_change, name_change, description_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💼 ' + change_1['position']
-                                    + '\n💵 ' + change_1['salary']
-                                    + '\n🏢 ' + change_1['company_name']
-                                    + '\n📋 ' + change_1['description']
-                                    + '\n📞 ' + change_1['contact_info'])
+        keyboard.add(comp_name, vac, salary, description, end_change)
+        bot.send_message(chat_id, text='Назва компанії/установи/організації: ' + offer['company_name']
+                                    + '\nВакансія: ' + offer['vacantion']
+                                    + '\nЗакінчена вища освіта: ' + offer['high_school']
+                                    + '\nСпеціальність: ' + offer['direction']
+                                    + '\nЗнання англійської мови: ' + offer['english']
+                                    + '\nІнші вимоги: ' + offer['other']
+                                    + '\nОфіційне працевлаштування: ' + offer['official_work']
+                                    + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                                    + '\nЗаробітна плата: ' + offer['salary']
+                                    + '\nБільш детальний опис вакансії: ' + offer['description']
+                                    + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'])
+        bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
+
+
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'біда')
+
+
+def vac_change_progress(message):
+    try:
+        user_id = message.from_user.id
+        chat_id = message.chat.id
+        text = message.text
+        change = collection_verification.find_one({'change_id': user_id})
+        obj = change["_id"]
+        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"vacantion": text}})
+        bot.send_message(chat_id, text='Зміни внесено')
+        offer = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        comp_name = types.InlineKeyboardButton(
+            text="Назву компанії/установи/організації", callback_data='comp_name_change,' + str(obj))
+        vac = types.InlineKeyboardButton(
+            text="Вакансію", callback_data='vac_change,' + str(obj))
+        salary = types.InlineKeyboardButton(
+            text="Заробітну плату", callback_data='salary_change,' + str(obj))
+        description = types.InlineKeyboardButton(
+            text="Опис вакансії", callback_data='description_change,' + str(obj))
+        end_change = types.InlineKeyboardButton(
+            text='Закінчити редагування', callback_data='offer_ch_end,'+str(obj))
+        keyboard.add(comp_name, vac, salary, description, end_change)
+        bot.send_message(chat_id, text='Назва компанії/установи/організації: ' + offer['company_name']
+                                       + '\nВакансія: ' + offer['vacantion']
+                                       + '\nЗакінчена вища освіта: ' + offer['high_school']
+                                       + '\nСпеціальність: ' + offer['direction']
+                                       + '\nЗнання англійської мови: ' + offer['english']
+                                       + '\nІнші вимоги: ' + offer['other']
+                                       + '\nОфіційне працевлаштування: ' + offer['official_work']
+                                       + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                                       + '\nЗаробітна плата: ' + offer['salary']
+                                       + '\nБільш детальний опис вакансії: ' + offer['description']
+                                       + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'])
         bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
 
@@ -431,64 +477,30 @@ def salary_change_progress(message):
         obj = change["_id"]
         collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"salary": text}})
         bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        position_change = types.InlineKeyboardButton(
-            text="Посаду", callback_data='position_change,'+str(obj))
-        salary_change = types.InlineKeyboardButton(
-            text="Заробітну плату", callback_data='salary_change,'+str(obj))
-        name_change = types.InlineKeyboardButton(
-            text="Назву компанії", callback_data='name_change,'+str(obj))
-        description_change = types.InlineKeyboardButton(
-            text="Опис компанії", callback_data='description_change,'+str(obj))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контактні дані", callback_data='contact_info_change,'+str(obj))
+        offer = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        comp_name = types.InlineKeyboardButton(
+            text="Назву компанії/установи/організації", callback_data='comp_name_change,' + str(obj))
+        vac = types.InlineKeyboardButton(
+            text="Вакансію", callback_data='vac_change,' + str(obj))
+        salary = types.InlineKeyboardButton(
+            text="Заробітну плату", callback_data='salary_change,' + str(obj))
+        description = types.InlineKeyboardButton(
+            text="Опис вакансії", callback_data='description_change,' + str(obj))
         end_change = types.InlineKeyboardButton(
-            text='Закінчити редагування', callback_data='offer_ch_end,'+str(obj))
-        keyboard.add(position_change, salary_change, name_change, description_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💼 ' + change_1['position']
-                                    + '\n💵 ' + change_1['salary']
-                                    + '\n🏢 ' + change_1['company_name']
-                                    + '\n📋 ' + change_1['description']
-                                    + '\n📞 ' + change_1['contact_info'])
-        bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
-
-
-
-    except Exception as e:
-        print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
-
-
-def name_change_progress(message):
-    try:
-        user_id = message.from_user.id
-        chat_id = message.chat.id
-        text = message.text
-        change = collection_verification.find_one({'change_id': user_id})
-        obj = change["_id"]
-        collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"company_name": text}})
-        bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        position_change = types.InlineKeyboardButton(
-            text="Посаду", callback_data='position_change,'+str(obj))
-        salary_change = types.InlineKeyboardButton(
-            text="Заробітну плату", callback_data='salary_change,'+str(obj))
-        name_change = types.InlineKeyboardButton(
-            text="Назву компанії", callback_data='name_change,'+str(obj))
-        description_change = types.InlineKeyboardButton(
-            text="Опис компанії", callback_data='description_change,'+str(obj))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контактні дані", callback_data='contact_info_change,'+str(obj))
-        end_change = types.InlineKeyboardButton(
-            text='Закінчити редагування', callback_data='offer_ch_end,'+str(obj))
-        keyboard.add(position_change, salary_change, name_change, description_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💼 ' + change_1['position']
-                                    + '\n💵 ' + change_1['salary']
-                                    + '\n🏢 ' + change_1['company_name']
-                                    + '\n📋 ' + change_1['description']
-                                    + '\n📞 ' + change_1['contact_info'])
+            text='Закінчити редагування', callback_data='offer_ch_end,' + str(obj))
+        keyboard.add(comp_name, vac, salary, description, end_change)
+        bot.send_message(chat_id, text='Назва компанії/установи/організації: ' + offer['company_name']
+                                       + '\nВакансія: ' + offer['vacantion']
+                                       + '\nЗакінчена вища освіта: ' + offer['high_school']
+                                       + '\nСпеціальність: ' + offer['direction']
+                                       + '\nЗнання англійської мови: ' + offer['english']
+                                       + '\nІнші вимоги: ' + offer['other']
+                                       + '\nОфіційне працевлаштування: ' + offer['official_work']
+                                       + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                                       + '\nЗаробітна плата: ' + offer['salary']
+                                       + '\nБільш детальний опис вакансії: ' + offer['description']
+                                       + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'])
         bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
     except Exception as e:
@@ -505,26 +517,30 @@ def description_change_progress(message):
         obj = change["_id"]
         collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {'$set': {"description": text}})
         bot.send_message(chat_id, text='Зміни внесено')
-        change_1 = collection_verification.find_one({'change_id': user_id})
-        keyboard = types.InlineKeyboardMarkup()
-        position_change = types.InlineKeyboardButton(
-            text="Посаду", callback_data='position_change,'+str(obj))
-        salary_change = types.InlineKeyboardButton(
-            text="Заробітну плату", callback_data='salary_change,'+str(obj))
-        name_change = types.InlineKeyboardButton(
-            text="Назву компанії", callback_data='name_change,'+str(obj))
-        description_change = types.InlineKeyboardButton(
-            text="Опис компанії", callback_data='description_change,'+str(obj))
-        contact_info_change = types.InlineKeyboardButton(
-            text="Контактні дані", callback_data='contact_info_change,'+str(obj))
+        offer = collection_verification.find_one({'change_id': user_id})
+        keyboard = types.InlineKeyboardMarkup(row_width=1)
+        comp_name = types.InlineKeyboardButton(
+            text="Назву компанії/установи/організації", callback_data='comp_name_change,' + str(obj))
+        vac = types.InlineKeyboardButton(
+            text="Вакансію", callback_data='vac_change,' + str(obj))
+        salary = types.InlineKeyboardButton(
+            text="Заробітну плату", callback_data='salary_change,' + str(obj))
+        description = types.InlineKeyboardButton(
+            text="Опис вакансії", callback_data='description_change,' + str(obj))
         end_change = types.InlineKeyboardButton(
-            text='Закінчити редагування', callback_data='offer_ch_end,'+str(obj))
-        keyboard.add(position_change, salary_change, name_change, description_change, contact_info_change, end_change)
-        bot.send_message(chat_id, text='💼 ' + change_1['position']
-                                    + '\n💵 ' + change_1['salary']
-                                    + '\n🏢 ' + change_1['company_name']
-                                    + '\n📋 ' + change_1['description']
-                                    + '\n📞 ' + change_1['contact_info'])
+            text='Закінчити редагування', callback_data='offer_ch_end,' + str(obj))
+        keyboard.add(comp_name, vac, salary, description, end_change)
+        bot.send_message(chat_id, text='Назва компанії/установи/організації: ' + offer['company_name']
+                                       + '\nВакансія: ' + offer['vacantion']
+                                       + '\nЗакінчена вища освіта: ' + offer['high_school']
+                                       + '\nСпеціальність: ' + offer['direction']
+                                       + '\nЗнання англійської мови: ' + offer['english']
+                                       + '\nІнші вимоги: ' + offer['other']
+                                       + '\nОфіційне працевлаштування: ' + offer['official_work']
+                                       + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                                       + '\nЗаробітна плата: ' + offer['salary']
+                                       + '\nБільш детальний опис вакансії: ' + offer['description']
+                                       + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'])
         bot.send_message(chat_id, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
     except Exception as e:
@@ -966,12 +982,11 @@ def send_to_channel(call):
             message_id = call.message.message_id
             offer = collection_verification.find_one({'message_id': message_id})
             obj = offer['_id']
-            print(call.data)
             data = call.data.split(',')
             chat_id = int(data[1])
             user_id = int(data[2])
             link = bot.create_chat_invite_link(channelForSummary, member_limit=1)
-            c = collection_offer.find_one({'user_id': str(user_id)})
+            c = collection_offer.find_one({'user_id': int(user_id)})
             print(user_id, chat_id)
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
@@ -992,18 +1007,30 @@ def send_to_channel(call):
                 bot.send_message(
                     chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
 
-            message_offer_save = bot.send_message(chat_id=channelForOffer, text='💼 ' + offer['position']
-                             + '\n💵 ' + offer['salary']
-                             + '\n🏢 ' + offer['company_name']
-                             + '\n📋 ' + offer['description']
-                             + '\n📞 ' + offer['contact_info'])
+            message_offer_save = bot.send_message(chat_id=channelForOffer, text='Назва компанії/установи/організації: ' + offer['company_name']
+                             + '\nВакансія: ' + offer['vacantion']
+                             + '\nЗакінчена вища освіта: ' + offer['high_school']
+                             + '\nСпеціальність: ' + offer['direction']
+                             + '\nЗнання англійської мови: ' + offer['english']
+                             + '\nІнші вимоги: ' + offer['other']
+                             + '\nОфіційне працевлаштування: ' + offer['official_work']
+                             + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                             + '\nЗаробітна плата: ' + offer['salary']
+                             + '\nБільш детальний опис вакансії: ' + offer['description']
+                             + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'])
 
             check_connections_with_db()
             offer_to_db = {
-                'user_id': offer['user_id'],
-                'position': offer['position'],
-                'salary': offer['salary'],
+                'user_id': user_id,
                 'company_name': offer['company_name'],
+                'vacantion': offer['vacantion'],
+                'high_school': offer['high_school'],
+                'direction': offer['direction'],
+                'english': offer['english'],
+                'other': offer['other'],
+                'official_work': offer['official_work'],
+                'remote_job': offer['remote_job'],
+                'salary': offer['salary'],
                 'description': offer['description'],
                 'contact_info': offer['contact_info'],
                 'message_id': message_offer_save.message_id
@@ -1018,7 +1045,7 @@ def send_to_channel(call):
             chat_id = int(data[1])
             user_id = int(data[1])
             obj = data[2]
-            offer_vacantion = collection_verification.find_one({'_id':  ObjectId("{}".format(obj))})
+            offer = collection_verification.find_one({'_id':  ObjectId("{}".format(obj))})
             link = bot.create_chat_invite_link(channelForSummary, member_limit=1)
             c = collection_offer.find_one({'user_id': str(user_id)})
             print(user_id, chat_id)
@@ -1042,20 +1069,32 @@ def send_to_channel(call):
             else:
                 bot.send_message(
                     chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
-            message_offer_save = bot.send_message(chat_id=channelForOffer, text='💼 ' + offer_vacantion['position']
-                                                                                + '\n💵 ' + offer_vacantion["salary"]
-                                                                                + '\n🏢 ' + offer_vacantion["company_name"]
-                                                                                + '\n📋 ' + offer_vacantion['description']
-                                                                                + '\n📞 ' + offer_vacantion['contact_info'])
+            message_offer_save = bot.send_message(chat_id=channelForOffer,  text='Назва компанії/установи/організації: ' + offer['company_name']
+                             + '\nВакансія: ' + offer['vacantion']
+                             + '\nЗакінчена вища освіта: ' + offer['high_school']
+                             + '\nСпеціальність: ' + offer['direction']
+                             + '\nЗнання англійської мови: ' + offer['english']
+                             + '\nІнші вимоги: ' + offer['other']
+                             + '\nОфіційне працевлаштування: ' + offer['official_work']
+                             + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                             + '\nЗаробітна плата: ' + offer['salary']
+                             + '\nБільш детальний опис вакансії: ' + offer['description']
+                             + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'])
 
             check_connections_with_db()
             offer_to_db = {
-                'user_id': offer_vacantion['user_id'],
-                'position':  offer_vacantion['position'],
-                'salary':  offer_vacantion['salary'],
-                'company_name':  offer_vacantion['company_name'],
-                'description':  offer_vacantion['description'],
-                'contact_info':  offer_vacantion['contact_info'],
+                'user_id': user_id,
+                'company_name': offer['company_name'],
+                'vacantion': offer['vacantion'],
+                'high_school': offer['high_school'],
+                'direction': offer['direction'],
+                'english': offer['english'],
+                'other': offer['other'],
+                'official_work': offer['official_work'],
+                'remote_job': offer['remote_job'],
+                'salary': offer['salary'],
+                'description': offer['description'],
+                'contact_info': offer['contact_info'],
                 'message_id': message_offer_save.message_id
             }
             # Send offer to db
@@ -1063,10 +1102,13 @@ def send_to_channel(call):
             collection_verification.delete_one({'_id':  ObjectId("{}".format(obj))})
 
         elif 'offer_cancel' in call.data:
+            message_id = call.message.message_id
             data = call.data.split(',')
             chat_id = int(data[1])
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
+            c = collection_verification.find_one({'message_id': message_id})
+            id_object = c['_id']
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
                 text="Переглянути можливі резюме", callback_data='get_list_summary')
@@ -1078,32 +1120,37 @@ def send_to_channel(call):
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             bot.send_message(
                 chat_id=chat_id, text='Вашу вакансію відхилeно!', reply_markup=reply_markup)
+            collection_verification.delete_one({"_id": ObjectId("{}".format(id_object))})
 
         elif 'offer_change' in call.data:  # запускає редагування вакансії
             chat = call.from_user.id
             message_id = call.message.message_id
             print(message_id)
-            change = collection_verification.find_one({'message_id': message_id})
-            keyboard = types.InlineKeyboardMarkup()
-            position_change = types.InlineKeyboardButton(
-                text="Посаду", callback_data='position_change,'+str(change['_id']))
-            salary_change = types.InlineKeyboardButton(
-                text="Заробітну плату", callback_data='salary_change,'+str(change['_id']))
-            name_change = types.InlineKeyboardButton(
-                text="Назву компанії", callback_data='name_change,'+str(change['_id']))
-            description_change = types.InlineKeyboardButton(
-                text="Опис компанії", callback_data='description_change,'+str(change['_id']))
-            contact_info_change = types.InlineKeyboardButton(
-                text="Контактні лані", callback_data='contact_info_change,'+str(change['_id']))
-            keyboard.add(position_change, salary_change, name_change, description_change, contact_info_change)
-            bot.send_message(chat, text='💼 ' + change['position']
-                             + '\n💵 ' + change['salary']
-                             + '\n🏢 ' + change['company_name']
-                             + '\n📋 ' + change['description']
-                             + '\n📞 ' + change['contact_info'])
+            offer = collection_verification.find_one({'message_id': message_id})
+            keyboard = types.InlineKeyboardMarkup(row_width=1)
+            comp_name = types.InlineKeyboardButton(
+                text="Назву компанії/установи/організації", callback_data='comp_name_change,'+str(offer['_id']))
+            vac = types.InlineKeyboardButton(
+                text="Вакансію", callback_data='vac_change,'+str(offer['_id']))
+            salary = types.InlineKeyboardButton(
+                text="Заробітну плату", callback_data='salary_change,'+str(offer['_id']))
+            description = types.InlineKeyboardButton(
+                text="Опис вакансії", callback_data='description_change,'+str(offer['_id']))
+            keyboard.add(comp_name, vac, salary, description)
+            bot.send_message(chat, text='Назва компанії/установи/організації: ' + offer['company_name']
+                             + '\nВакансія: ' + offer['vacantion']
+                             + '\nЗакінчена вища освіта: ' + offer['high_school']
+                             + '\nСпеціальність: ' + offer['direction']
+                             + '\nЗнання англійської мови: ' + offer['english']
+                             + '\nІнші вимоги: ' + offer['other']
+                             + '\nОфіційне працевлаштування: ' + offer['official_work']
+                             + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                             + '\nЗаробітна плата: ' + offer['salary']
+                             + '\nБільш детальний опис вакансії: ' + offer['description']
+                             + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'])
             bot.send_message(chat, text='Обріть, що бажаєте змінити:', reply_markup=keyboard)
 
-        elif 'position_change' in call.data:
+        elif 'comp_name_change' in call.data:
             user_id = call.message.chat.id
             data = call.data.split(',')
             obj = data[1]
@@ -1111,8 +1158,19 @@ def send_to_channel(call):
             print(obj)
             collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
             chat_id = call.message.chat.id
-            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Введіть нову посаду:')
-            bot.register_next_step_handler(msg, position_change_progress)
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Назва компанії/установи/організації:')
+            bot.register_next_step_handler(msg, comp_change_progress)
+
+        elif 'vac_change' in call.data:
+            user_id = call.message.chat.id
+            data = call.data.split(',')
+            obj = data[1]
+            print(user_id)
+            print(obj)
+            collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
+            chat_id = call.message.chat.id
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Вакансія:')
+            bot.register_next_step_handler(msg, vac_change_progress)
 
         elif 'salary_change' in call.data:
             user_id = call.message.chat.id
@@ -1122,19 +1180,8 @@ def send_to_channel(call):
             print(obj)
             collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
             chat_id = call.message.chat.id
-            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Ведіть нову заробітну плату:')
+            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Заробітна плата:')
             bot.register_next_step_handler(msg, salary_change_progress)
-
-        elif 'name_change' in call.data:
-            user_id = call.message.chat.id
-            data = call.data.split(',')
-            obj = data[1]
-            print(user_id)
-            print(obj)
-            collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
-            chat_id = call.message.chat.id
-            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Ведіть нову назву копмпанії:')
-            bot.register_next_step_handler(msg, name_change_progress)
 
         elif 'description_change' in call.data:
             user_id = call.message.chat.id
@@ -1145,28 +1192,17 @@ def send_to_channel(call):
             collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
             chat_id = call.message.chat.id
             msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                                        text='Ведіть новий опис компанії:')
+                                        text='Опис вакансії:')
             bot.register_next_step_handler(msg, description_change_progress)
 
-        elif 'contact_info_change' in call.data:
-            user_id = call.message.chat.id
-            data = call.data.split(',')
-            obj = data[1]
-            print(user_id)
-            print(obj)
-            collection_verification.update_one({"_id": ObjectId("{}".format(obj))}, {"$set": {'change_id': user_id}})
-            chat_id = call.message.chat.id
-            msg = bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id,
-                                        text='Ведіть нові контактні дані:')
-            bot.register_next_step_handler(msg, contact_info_change_progress)
-
         elif 'offer_ch_end' in call.data:  # це викликається кнопкою "закінчити редагування"
+            chat_id = call.message.chat.id
             data = call.data.split(',')
             id_object = data[1]
-            offer_b = collection_verification.find_one({'_id':  ObjectId("{}".format(id_object))})
-            user_id = offer_b['user_id']
+            offer = collection_verification.find_one({'_id':  ObjectId("{}".format(id_object))})
+            user_id = offer['user_id']
             print('User id id verif button' + str(call.message.from_user.id))
-            bot.delete_message(chat_id=privateChatId, message_id=offer_b['message_id'])
+            bot.delete_message(chat_id=privateChatId, message_id=offer['message_id'])
             keyboard = types.InlineKeyboardMarkup()
             approve = types.InlineKeyboardButton(
                 text="Підтвердити", callback_data='change_konec,'+str(user_id)+','+str(id_object))
@@ -1175,13 +1211,20 @@ def send_to_channel(call):
             change = types.InlineKeyboardButton(
                 text='Редагувати', callback_data='offer_change,')
             keyboard.add(approve, cancel, change)
-            message_save = bot.send_message(privateChatId, text='💼 ' + offer_b['position']
-                                                                        + '\n💵 ' + offer_b['salary']
-                                                                        + '\n🏢 ' + offer_b['company_name']
-                                                                        + '\n📋 ' + offer_b['description']
-                                                                        + '\n📞 ' + offer_b['contact_info'],
-                                            reply_markup=keyboard)
+            message_save = bot.send_message(privateChatId,text='Назва компанії/установи/організації: ' + offer['company_name']
+                             + '\nВакансія: ' + offer['vacantion']
+                             + '\nЗакінчена вища освіта: ' + offer['high_school']
+                             + '\nСпеціальність: ' + offer['direction']
+                             + '\nЗнання англійської мови: ' + offer['english']
+                             + '\nІнші вимоги: ' + offer['other']
+                             + '\nОфіційне працевлаштування: ' + offer['official_work']
+                             + '\nМожливість працювати віддалено: ' + offer['remote_job']
+                             + '\nЗаробітна плата: ' + offer['salary']
+                             + '\nБільш детальний опис вакансії: ' + offer['description']
+                             + '\nЗа детальною інформацією звертатися: ' + offer['contact_info'], reply_markup=keyboard)
             collection_verification.update_one({"_id": ObjectId("{}".format(id_object))}, {'$set': {"message_id": message_save.message_id}})
+            bot.delete_message(chat_id, message_id=call.message.message_id)
+            bot.send_message(chat_id, 'Вакансію змінено')
 
         elif 'summary_verefication' in call.data:
             chat_id = call.message.chat.id
@@ -1560,7 +1603,7 @@ def send_to_channel(call):
             chat_id = call.message.chat.id
             user_id = call.from_user.id
             print(user_id)
-            offer_search_list = collection_offer.find({'user_id': str(user_id)})
+            offer_search_list = collection_offer.find({'user_id': int(user_id)})
             for x in offer_search_list:
                 keyboard_offer = types.InlineKeyboardMarkup()
                 delete_offer = types.InlineKeyboardButton(text='Видалити ❌', callback_data='delete_offer,'+str(x['_id'])+','+str(x['message_id']))
@@ -1573,18 +1616,12 @@ def send_to_channel(call):
                 text="Нове резюме", callback_data='student_choice')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-            summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
-                                                         url=linkToChannelForSummary)
-            offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
-                                                       url=linkToChannelForOffer)
-
-            keyboard = [[summary_channel, offer_channel], [
-                choose, employer_button], [student_button]]
+            keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
-
             bot.send_message(
                 chat_id, text='Ось всі ваші вакансії',
                 reply_markup=reply_markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
 
         elif call.data == 'summary_cal':  # видає резюме для видалення
             chat_id = call.message.chat.id
@@ -1602,18 +1639,13 @@ def send_to_channel(call):
                 text="Нове резюме", callback_data='student_choice')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-            summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
-                                                         url=linkToChannelForSummary)
-            offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
-                                                       url=linkToChannelForOffer)
-
-            keyboard = [[summary_channel, offer_channel], [
-                choose, employer_button], [student_button]]
+            keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
 
             bot.send_message(
                 chat_id, text='Ось всі ваші резюме',
                 reply_markup=reply_markup)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
 
         elif 'delete_offer' in call.data:  # видаляє вакансію
             chat_id = call.message.chat.id
@@ -1634,7 +1666,7 @@ def send_to_channel(call):
             bot.edit_message_text(
                 chat_id=chat_id, message_id=call.message.message_id, text='Резюме видалено')
             bot.delete_message(chat_id=channelForSummary, message_id=message_id)
-
+#summary
         elif 'fac_st,' in call.data:
             chat_id = call.message.chat.id
             fack = call.data.split(',')
@@ -1761,6 +1793,7 @@ def send_to_channel(call):
             markup.add('Договірна')
             msg = bot.send_message(chat_id, text='Заробітна плата:', reply_markup=markup)
             bot.register_next_step_handler(msg, process_salary)
+            bot.delete_message(chat_id, message_id=call.message.message_id)
 
 
 
@@ -1771,9 +1804,6 @@ def send_to_channel(call):
     except Exception as e:
         print(traceback.format_exc())
         bot.reply_to(call.message, 'Помилка відправлення в канал...')
-
-
-
 
 
 def form_for_summary_list(summary):
@@ -1793,15 +1823,22 @@ def form_for_summary_list(summary):
             + '\nІнші навички: ' + another + '\nДосвід роботи: ' + experience + '\nКонтактний телефон: ' + contact_info + '\nАдреса електронної пошти: ' + str(email))
 
 
-
 def form_for_offer_list(ofr):
-    position = ofr['position']
+    com_nam = ofr['company_name']
+    va = ofr['vacantion']
+    high_school = ofr['high_school']
+    direction = ofr['direction']
+    english = ofr['english']
+    other = ofr['other']
+    official_work = ofr['official_work']
+    remote_job = ofr['remote_job']
     salary = ofr['salary']
-    company_name = ofr['company_name']
     description = ofr['description']
-    contact_info = ofr['description']
+    contact_inf = ofr['contact_info']
 
-    return '💼 '+position + '\n💵 '+salary+'\n🏢 '+company_name+'\n📋 ' + description + '\n📞 '+contact_info
+    return ('Назва компанії/установи/організації: ' + com_nam + '\nВакансія: ' + va + '\nЗакінчена вища освіта: ' + high_school + '\nСпеціальність: ' + direction
+            + '\nЗнання англійської мови: ' + english + '\nІнші вимоги: ' + other + '\nОфіційне працевлаштування: ' + official_work
+            + '\nМожливість працювати віддалено: ' + remote_job + '\nЗаробітна плата: ' + salary + '\nБільш детальний опис вакансії: ' + description + '\nЗа детальною інформацією звертатися: ' + contact_inf)
 
 
 def check_connections_with_db():
