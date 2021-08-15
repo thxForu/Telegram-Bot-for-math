@@ -61,9 +61,31 @@ fac_and_spec = {'Біологічний факультет': ['Біологія'
 'Українсько-угорський навчально-науковий інститут': ['Міжнародні відносини, суспільні комунікації та регіональні студії', 'Середня освіта. Історія', 'Середня освіта. Математика', 'Середня освіта. Угорська мова і література', 'Середня освіта. Фізика', 'Філологія. Угро-фінські мови та літератури, перша – угорська'],
 'Природничо-гуманітарний фаховий коледж': ['Будівництво та цивільна інженерія', 'Геодезія та землеустрій', 'Інженерія програмного забезпечення', 'Облік і оподаткування', 'Право', 'Туризм', 'Фінанси, банківська справа та страхування']
 }
-direction_and_spec = {'Середня освіта': ['Середня освіта. Біологія та здоров’я людини', 'Середня освіта. Географія', 'Середня освіта. Фізика', 'Середня освіта. Математика'],
-'Програмування ': ['Комп’ютерна інженерія', 'Системний аналіз'],
-'Медицина': ['Медицина', 'Медсестринство. Екстрена медицина', 'Медсестринство. Медсестринство', 'Фармація, промислова фармація']
+direction_and_spec = {'Освіта / Педагогіка': ['Дошкільна освіта', 'Початкова освіта ', 'Середня освіта. Українська мова і література ', 'Середня освіта. Українська мова і література ', 'Середня освіта. Англійська мова і література', 'Середня освіта. Німецька мова і література',
+'Середня освіта. Французька мова і література', 'Середня освіта. Російська мова і література', 'Середня освіта. Угорська мова і література', 'Середня освіта. Румунська мова і література', 'Середня освіта. Історія', 'Середня освіта. Математика', 'Середня освіта. Біологія та здоров’я людини',
+'Середня освіта. Хімія', 'Середня освіта. Географія', 'Середня освіта. Фізика', 'Середня освіта. Фізична культура', 'Спеціальна освіта. Олігофренопедагогіка', 'Фізична культура і спорт'],
+'Гуманітарні науки': ['Історія та археологія', 'Філософія', 'Культурологія', 'Філологія. Українська мова і література', 'Філологія. Слов’янські мови та літератури (переклад включно), перша – російська', 'Філологія. Слов’янські мови та літератури (переклад включно), перша –словацька', 'Філологія. Слов’янські мови та літератури (переклад включно), перша –чеська',
+'Філологія. Германські мови та літератури (переклад включно), перша – англійська', 'Філологія. Германські мови та літератури (переклад включно), перша – німецька', 'Філологія. Романські мови та літератури (переклад включно), перша – французька', 'Філологія. Угро-фінські мови та літератури (переклад включно), перша – угорська', 'Філологія. Прикладна лінгвістика'],
+'Соціальні та поведінкові науки': ['Економіка', 'Політологія', 'Психологія', 'Соціологія'],
+'Журналістика': ['Журналістика'],
+'Управління та адміністрування': ['Облік і оподаткування', 'Фінанси, банківська справа та страхування', 'Менеджмент', 'Маркетинг', 'Підприємництво, торгівля та біржова діяльність'],
+'Право': ['Право'],
+'Біологія': ['Біологія'],
+'Природничі науки': ['Екологія', 'Хімія', 'Фізика та астрономія', 'Прикладна фізика та наноматеріали', 'Географія'],
+'Математика та статистика': ['Математика', 'Прикладна математика'],
+'Інформаційні технології': ['Інженерія програмного забезпечення', 'Комп’ютерні науки', 'Комп’ютерна інженерія', 'Системний аналіз', 'Кібербезпека', 'Інформаційні системи та технології'],
+'Механічна інженерія': ['Прикладна механіка'],
+'Автоматизація та приладобудування': ['Автоматизація та комп’ютерно-інтегровані технології', 'Мікро- та наносистемна техніка'],
+'Хімічна та біоінженерія': ['Хімічні технології та інженерія', 'Біомедична інженерія'],
+'Електроніка та телекомунікації': ['Електроніка', 'Телекомунікації та радіотехніка'],
+'Архітектура та будівництво': ['Будівництво та цивільна інженерія', 'Геодезія та землеустрій'],
+'Аграрні науки та продовольство': ['Садівництво та виноградарство', 'Лісове господарство'],
+'Охорона здоров’я': ['Стоматологія', 'Медицина', 'Медсестринство. Екстрена медицина', 'Медсестринство. Медсестринство', 'Фармація, промислова фармація', 'Фізична терапія, ерготерапія'],
+'Соціальна робота': ['Соціальна робота'],
+'Сфера обслуговування': ['Готельно-ресторанна справа', 'Туризм'],
+'Цивільна безпека': ['Правоохоронна діяльність'],
+'Публічне управління та адміністрування': ['Публічне управління та адміністрування'],
+'Міжнародні відносини': ['Міжнародні відносини, суспільні комунікації та регіональні студії', 'Міжнародні економічні відносини', 'Міжнародне право']
 }
 
 client = pymongo.MongoClient(
@@ -992,7 +1014,7 @@ def send_to_channel(call):
                                message_id=call.message.message_id)
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі резюме", callback_data='get_list_summary')
+                text="Видалити вакансію", callback_data='offer_cal')
             employer_button = types.InlineKeyboardButton(
                 text="Нова вакансія", callback_data='new_offer')
             choose = types.InlineKeyboardButton(
@@ -1002,11 +1024,10 @@ def send_to_channel(call):
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             if c is None:
                 bot.send_message(
-                    chat_id=chat_id, text='Вашу вакансію опубліковано!' + str(link.invite_link), reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваша вакансія прийнята!' + str(link.invite_link), reply_markup=reply_markup)
             else:
                 bot.send_message(
-                    chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
-
+                    chat_id=chat_id, text='Ваша вакансія прийнята!', reply_markup=reply_markup)
             message_offer_save = bot.send_message(chat_id=channelForOffer, text='Назва компанії/установи/організації: ' + offer['company_name']
                              + '\nВакансія: ' + offer['vacantion']
                              + '\nЗакінчена вища освіта: ' + offer['high_school']
@@ -1053,7 +1074,7 @@ def send_to_channel(call):
                                message_id=call.message.message_id)
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі резюме", callback_data='get_list_summary')
+                text="Видалити вакансію", callback_data='offer_cal')
             employer_button = types.InlineKeyboardButton(
                 text="Нова вакансія", callback_data='new_offer')
             choose = types.InlineKeyboardButton(
@@ -1061,14 +1082,13 @@ def send_to_channel(call):
 
             keyboard = [[choose, employer_button], [student_button]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
-
             if c is None:
                 bot.send_message(
-                    chat_id=chat_id, text='Вашу вакансію опубліковано!' + str(link.invite_link),
+                    chat_id=chat_id, text='Ваша вакансія прийнята!' + str(link.invite_link),
                     reply_markup=reply_markup)
             else:
                 bot.send_message(
-                    chat_id=chat_id, text='Вашу вакансію опубліковано!', reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваша вакансія прийнята!', reply_markup=reply_markup)
             message_offer_save = bot.send_message(chat_id=channelForOffer,  text='Назва компанії/установи/організації: ' + offer['company_name']
                              + '\nВакансія: ' + offer['vacantion']
                              + '\nЗакінчена вища освіта: ' + offer['high_school']
@@ -1233,7 +1253,11 @@ def send_to_channel(call):
                                   text='\nВаше резюме прийнято для обробки та перевірки. Очікуйте на повідомлення')
 
             print('UserId in sum veref: '+str(chat_id))
-
+            for key, value in direction_and_spec.items():
+                for x in value:
+                    if summary.specialty in x:
+                        print(key)
+                        summary.direction = key
             keyboard = types.InlineKeyboardMarkup()
             approve = types.InlineKeyboardButton(
                 text="Підтвердити", callback_data='summary_approve,'+str(chat_id)+','+str(chat_id))
@@ -1268,6 +1292,7 @@ def send_to_channel(call):
                 'experience': summary.experience,
                 'contact_info': summary.contact_info,
                 'email': summary.email,
+                'direction': summary.direction,
                 'message_id': message_summary_save.message_id
             }
             # Send summary to db
@@ -1285,9 +1310,9 @@ def send_to_channel(call):
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі вакансії", callback_data='get_list_offer')
+                text="Видалити резюме", callback_data='summary_cal')
             employer_button = types.InlineKeyboardButton(
-                text="Нове резюме", callback_data='student_choice')
+                text="Нове резюме", callback_data='new_summary')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
             keyboard = [[choose, employer_button], [student_button]]
@@ -1488,9 +1513,9 @@ def send_to_channel(call):
                                message_id=call.message.message_id)
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі резюме", callback_data='get_list_summary')
+                text="Видалити резюме", callback_data='summary_cal')
             employer_button = types.InlineKeyboardButton(
-                text="Нова вакансія", callback_data='new_offer')
+                text="Нове резюме", callback_data='new_summary')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
 
@@ -1611,9 +1636,9 @@ def send_to_channel(call):
                 bot.send_message(chat_id, text=form_for_offer_list(x), reply_markup=keyboard_offer)
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі вакансії", callback_data='get_list_offer')
+                text="Видалити вакансію", callback_data='offer_cal')
             employer_button = types.InlineKeyboardButton(
-                text="Нове резюме", callback_data='student_choice')
+                text="Нова вакансія", callback_data='new_offer')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
             keyboard = [[choose, employer_button], [student_button]]
@@ -1634,9 +1659,9 @@ def send_to_channel(call):
                 bot.send_message(chat_id, text=form_for_summary_list(x), reply_markup=keyboard_summary)
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі вакансії", callback_data='get_list_offer')
+                text="Видалити резюме", callback_data='summary_cal')
             employer_button = types.InlineKeyboardButton(
-                text="Нове резюме", callback_data='student_choice')
+                text="Нове резюме", callback_data='new_summary')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
             keyboard = [[choose, employer_button], [student_button]]
@@ -1848,7 +1873,6 @@ def check_connections_with_db():
     except:
         pprint(traceback.format_exc())
         print("Could not connect to MongoDB")
-
 
 
 check = check_connections_with_db()
