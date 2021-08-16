@@ -1019,15 +1019,20 @@ def send_to_channel(call):
                 text="Нова вакансія", callback_data='new_offer')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-
-            keyboard = [[choose, employer_button], [student_button]]
+            res = types.InlineKeyboardButton(text='Підходящі резюме', callback_data='get_list_summary')
+            keyboard = [[choose, employer_button], [student_button, res]]
+            der = []
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             if c is None:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваша вакансія прийнята!' + str(link.invite_link), reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваша вакансія прийнята!'
+                                          '\nНадсилаємо Вам резюме, які найбільше підходять вимогам вакансії.'
+                                          '\nТакож у Вас є можливість ознайомитися з усіма наявними резюме на нашому Каналі з резюме.' + str(link.invite_link))
             else:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваша вакансія прийнята!', reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваша вакансія прийнята!'
+                                          '\nНадсилаємо Вам резюме, які найбільше підходять вимогам вакансії.'
+                                          '\nТакож у Вас є можливість ознайомитися з усіма наявними резюме на нашому Каналі з резюме.')
             message_offer_save = bot.send_message(chat_id=channelForOffer, text='Назва компанії/установи/організації: ' + offer['company_name']
                              + '\nВакансія: ' + offer['vacantion']
                              + '\nЗакінчена вища освіта: ' + offer['high_school']
@@ -1059,6 +1064,15 @@ def send_to_channel(call):
             # Send offer to db
             collection_offer.insert_one(offer_to_db)
             collection_verification.delete_one({'_id': ObjectId("{}".format(obj))})
+            for value in collection_offer.find({'user_id': user_id}):
+                if value['direction'] in der:
+                    continue
+                else:
+                    for bruch in collection_summary.find():
+                        if value['direction'] in bruch['direction']:
+                            bot.send_message(chat_id, form_for_summary_list(bruch))
+                            der.append(value['direction'])
+            bot.send_message(chat_id, text='Підходящі резюме', reply_markup=reply_markup)
 
         elif 'change_konec,' in call.data:  # закінчує редагування вакансії, копіює вакансію з колекції верифікації в колекцію оффера, постить в канал оффера і видпляє з колекції верифікації
             print(call.data)
@@ -1068,7 +1082,7 @@ def send_to_channel(call):
             obj = data[2]
             offer = collection_verification.find_one({'_id':  ObjectId("{}".format(obj))})
             link = bot.create_chat_invite_link(channelForSummary, member_limit=1)
-            c = collection_offer.find_one({'user_id': str(user_id)})
+            c = collection_offer.find_one({'user_id': int(user_id)})
             print(user_id, chat_id)
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
@@ -1079,16 +1093,19 @@ def send_to_channel(call):
                 text="Нова вакансія", callback_data='new_offer')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-
-            keyboard = [[choose, employer_button], [student_button]]
+            res = types.InlineKeyboardButton(text='Підходящі резюме', callback_data='get_list_summary')
+            keyboard = [[choose, employer_button], [student_button, res]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             if c is None:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваша вакансія прийнята!' + str(link.invite_link),
-                    reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваша вакансія прийнята!'
+                                          '\nНадсилаємо Вам резюме, які найбільше підходять вимогам вакансії.'
+                                          '\nТакож у Вас є можливість ознайомитися з усіма наявними резюме на нашому Каналі з резюме.' + str(link.invite_link))
             else:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваша вакансія прийнята!', reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваша вакансія прийнята!'
+                                          '\nНадсилаємо Вам резюме, які найбільше підходять вимогам вакансії.'
+                                          '\nТакож у Вас є можливість ознайомитися з усіма наявними резюме на нашому Каналі з резюме.')
             message_offer_save = bot.send_message(chat_id=channelForOffer,  text='Назва компанії/установи/організації: ' + offer['company_name']
                              + '\nВакансія: ' + offer['vacantion']
                              + '\nЗакінчена вища освіта: ' + offer['high_school']
@@ -1120,6 +1137,16 @@ def send_to_channel(call):
             # Send offer to db
             collection_offer.insert_one(offer_to_db)
             collection_verification.delete_one({'_id':  ObjectId("{}".format(obj))})
+            des = []
+            for value in collection_offer.find({'user_id': user_id}):
+                if value['direction'] in des:
+                    continue
+                else:
+                    for bruch in collection_summary.find():
+                        if value['direction'] in bruch['direction']:
+                            bot.send_message(chat_id, form_for_summary_list(bruch))
+                            des.append(value['direction'])
+            bot.send_message(chat_id, text='Меню', reply_markup=reply_markup)
 
         elif 'offer_cancel' in call.data:
             message_id = call.message.message_id
@@ -1315,14 +1342,17 @@ def send_to_channel(call):
                 text="Нове резюме", callback_data='new_summary')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-            keyboard = [[choose, employer_button], [student_button]]
+            vac = types.InlineKeyboardButton(text='Підходящі вакансії', callback_data='get_list_offer')
+            keyboard = [[choose, employer_button], [student_button, vac]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             if c is None:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваше резюме опубліковано!' + str(link.invite_link), reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваше резюме прийнято!\nНадсилаємо вакансії, які можуть Вас зацікавити.\nТакож у Вас є можливість ознайомитися з усіма наявними '
+                                          'вакансіями на нашому Каналі з вакансіями' + str(link.invite_link))
             else:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваше резюме прийнято!\nНадсилаємо вакансії, які можуть Вас зацікавити.\nТакож у Вас є можливість ознайомитися з усіма наявними '
+                                          'вакансіями на нашому Каналі з вакансіями')
 
             message_save = bot.send_message(chat_id=channelForSummary, text='Прізвище, ім’я, по батькові:' + summary['name']
                              + '\nВік: ' + summary['age']
@@ -1349,12 +1379,23 @@ def send_to_channel(call):
                 'another': summary['another'],
                 'experience':  summary['experience'],
                 'contact_info': summary['contact_info'],
+                'direction': summary['direction'],
                 'email':  summary['email'],
                 'message_id': message_save.message_id
             }
             # Send offer to db
             collection_summary.insert_one(summary_to_db)
             collection_verification.delete_one({'_id': ObjectId("{}".format(obj))})
+            dea = []
+            for value in collection_summary.find({'user_id': user_id}):
+                if value['direction'] in dea:
+                    continue
+                else:
+                    for bruch in collection_offer.find():
+                        if value['direction'] in bruch['direction']:
+                            bot.send_message(chat_id, form_for_offer_list(bruch))
+                            dea.append(value['direction'])
+            bot.send_message(chat_id, text='Меню', reply_markup=reply_markup)
 
         elif 'summary_cancel' in call.data:
             data = call.data.split(',')
@@ -1377,7 +1418,6 @@ def send_to_channel(call):
             bot.send_message(
                 chat_id=chat_id, text='Ваше резюме відхилино!', reply_markup=reply_markup)
             collection_verification.delete_one({"_id": ObjectId("{}".format(id_object))})
-
 
         elif 'summary_change' in call.data:  # запускає редагування резюме)
             chat = call.from_user.id
@@ -1518,17 +1558,17 @@ def send_to_channel(call):
                 text="Нове резюме", callback_data='new_summary')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-
-            keyboard = [[choose, employer_button], [student_button]]
+            vac = types.InlineKeyboardButton(text='Підходящі вакансії', callback_data='get_list_offer')
+            keyboard = [[choose, employer_button], [student_button, vac]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
-
             if c is None:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваше резюме прийнято!' + str(link.invite_link),
-                    reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваше резюме прийнято!\nНадсилаємо вакансії, які можуть Вас зацікавити.\nТакож у Вас є можливість ознайомитися з усіма наявними '
+                                          'вакансіями на нашому Каналі з вакансіями' + str(link.invite_link))
             else:
                 bot.send_message(
-                    chat_id=chat_id, text='Ваше резюме опубліковано!', reply_markup=reply_markup)
+                    chat_id=chat_id, text='Ваше резюме прийнято!\nНадсилаємо вакансії, які можуть Вас зацікавити.\nТакож у Вас є можливість ознайомитися з усіма наявними '
+                                          'вакансіями на нашому Каналі з вакансіями\n')
             message_save = bot.send_message(chat_id=channelForSummary, text='Прізвище, ім’я, по батькові: ' + summary['name']
                              + '\nВік: ' + summary['age']
                              + '\nФакультет: ' + summary['faculty']
@@ -1554,73 +1594,78 @@ def send_to_channel(call):
                 'another': summary['another'],
                 'experience':  summary['experience'],
                 'contact_info': summary['contact_info'],
+                'direction': summary['direction'],
                 'email':  summary['email'],
                 'message_id': message_save.message_id
             }
             # Send offer to db
             collection_summary.insert_one(summary_to_db)
             collection_verification.delete_one({'_id': ObjectId("{}".format(obj))})
+            deb = []
+            for value in collection_summary.find({'user_id': user_id}):
+                if value['direction'] in deb:
+                    continue
+                else:
+                    for bruch in collection_offer.find():
+                        if value['direction'] in bruch['direction']:
+                            bot.send_message(chat_id, form_for_offer_list(bruch))
+                            deb.append(value['direction'])
+            bot.send_message(chat_id, text='Меню', reply_markup=reply_markup)
 
         elif call.data == 'get_list_summary':
             chat_id = call.message.chat.id
             user_id = call.from_user.id
-            cur = collection_offer.find({'user_id': user_id})
-            for doc in cur:
-                for x in collection_summary.find():
-                    x_split = x['skills'].split()
-                    for a in x_split:
-                        if a in doc['position']:
-                            last = bot.send_message(chat_id, text=form_for_summary_list(x))
-                        break
+            deb = []
+            for value in collection_offer.find({'user_id': user_id}):
+                if value['direction'] in deb:
+                    continue
+                else:
+                    for bruch in collection_summary.find():
+                        if value['direction'] in bruch['direction']:
+                            bot.send_message(chat_id, form_for_summary_list(bruch))
+                            deb.append(value['direction'])
             bot.edit_message_text(
                 chat_id=chat_id, message_id=call.message.message_id, text='Список резюме:')
-
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі резюме", callback_data='get_list_summary')
+                text="Видалити вакансію", callback_data='offer_cal')
             employer_button = types.InlineKeyboardButton(
                 text="Нова вакансія", callback_data='new_offer')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-            summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
-                                                         url=linkToChannelForSummary)
-            offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
-                                                       url=linkToChannelForOffer)
-            keyboard = [[summary_channel, offer_channel], [
-                choose, employer_button], [student_button]]
+            resume = types.InlineKeyboardButton(text='Підходящі резюме', callback_data='get_list_summary')
+            keyboard = [[choose, employer_button], [student_button, resume]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             bot.send_message(
-                chat_id=chat_id, text='Ось всі можливі резюме', reply_markup=reply_markup)
+                chat_id=chat_id, text='Меню', reply_markup=reply_markup)
 
             print('Summary List')
 
         elif call.data == 'get_list_offer':
             chat_id = call.message.chat.id
             user_id = call.from_user.id
-            skills_summary = collection_summary.find_one({'user_id': user_id})
-            for x in collection_offer.find():
-                if skills_summary['skills'] in x['position']:
-                    last = bot.send_message(chat_id, text=form_for_offer_list(x))
+            deb = []
+            for value in collection_summary.find({'user_id': user_id}):
+                if value['direction'] in deb:
+                    continue
+                else:
+                    for bruch in collection_offer.find():
+                        if value['direction'] in bruch['direction']:
+                            bot.send_message(chat_id, form_for_offer_list(bruch))
+                            deb.append(value['direction'])
             bot.edit_message_text(chat_id=chat_id, message_id=call.message.message_id, text='Список вакансій:')
-
             keyboard = types.InlineKeyboardMarkup()
             student_button = types.InlineKeyboardButton(
-                text="Переглянути можливі вакансії", callback_data='get_list_offer')
+                text="Видалити резюме", callback_data='summary_cal')
             employer_button = types.InlineKeyboardButton(
-                text="Нове резюме", callback_data='student_choice')
+                text="Нове резюме", callback_data='new_summary')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-            summary_channel = types.InlineKeyboardButton(text='Канал з резюме',
-                                                         url=linkToChannelForSummary)
-            offer_channel = types.InlineKeyboardButton(text='Канал з вакансіями',
-                                                       url=linkToChannelForOffer)
-
-            keyboard = [[summary_channel, offer_channel], [
-                choose, employer_button], [student_button]]
+            vacant = types.InlineKeyboardButton(text='Підходящі вакансії', callback_data='get_list_offer')
+            keyboard = [[choose, employer_button], [student_button, vacant]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
-
             bot.send_message(
-                chat_id, text='Ось всі можливі вакансії (якщо нічого немає, то підходящі вакансії відсутні)', reply_markup=reply_markup)
+                chat_id, text='Меню', reply_markup=reply_markup)
             print('Offer List')
 
         elif call.data == 'offer_cal':  # видає вакансії для видалення
@@ -1641,7 +1686,8 @@ def send_to_channel(call):
                 text="Нова вакансія", callback_data='new_offer')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-            keyboard = [[choose, employer_button], [student_button]]
+            resume = types.InlineKeyboardButton(text='Підходящі резюме', callback_data='get_list_summary')
+            keyboard = [[choose, employer_button], [student_button, resume]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
             bot.send_message(
                 chat_id, text='Ось всі ваші вакансії',
@@ -1664,11 +1710,11 @@ def send_to_channel(call):
                 text="Нове резюме", callback_data='new_summary')
             choose = types.InlineKeyboardButton(
                 text="Зміна перегляду", callback_data='who_am_i')
-            keyboard = [[choose, employer_button], [student_button]]
+            vacant = types.InlineKeyboardButton(text='Підходящі вакансії', callback_data='get_list_offer')
+            keyboard = [[choose, employer_button], [student_button, vacant]]
             reply_markup = types.InlineKeyboardMarkup(keyboard)
-
             bot.send_message(
-                chat_id, text='Ось всі ваші резюме',
+                chat_id, text='Меню',
                 reply_markup=reply_markup)
             bot.delete_message(chat_id, message_id=call.message.message_id)
 
