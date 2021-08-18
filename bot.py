@@ -954,9 +954,9 @@ def offer_timer_delete(message):
         time_now = now.strftime('%d/%m/%Y')
         for x in collection_offer.find():
             time_parse = datetime.datetime.strptime(x['time'], '%d/%m/%Y')
-            time_delta = time_parse + datetime.timedelta(days=365)
+            time_delta = time_parse + datetime.timedelta(days=2)
             time_delete = time_delta.strftime('%d/%m/%Y')
-            time_notification_process = time_parse + datetime.timedelta(days=358)
+            time_notification_process = time_parse + datetime.timedelta(days=1)
             time_notification = time_notification_process.strftime('%d/%m/%Y')
             if time_delete == time_now:
                 collection_offer.delete_one({'_id': x["_id"]})
@@ -965,9 +965,9 @@ def offer_timer_delete(message):
                 bot.send_message(chat_id=x['user_id'], text='Через 7 календарних днів вашу вакансію буде видалено')
         for x in collection_summary.find():
             time_parse = datetime.datetime.strptime(x['time'], '%d/%m/%Y')
-            time_delta = time_parse + datetime.timedelta(days=365)
+            time_delta = time_parse + datetime.timedelta(days=2)
             time_delete = time_delta.strftime('%d/%m/%Y')
-            time_notification_process = time_parse + datetime.timedelta(days=358)
+            time_notification_process = time_parse + datetime.timedelta(days=1)
             time_notification = time_notification_process.strftime('%d/%m/%Y')
             if time_delete == time_now:
                 collection_summary.delete_one({'_id': x["_id"]})
