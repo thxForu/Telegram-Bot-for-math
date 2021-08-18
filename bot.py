@@ -976,32 +976,6 @@ def clean_collections():
     except Exception as e:
         print(traceback.format_exc())
 
-
-@bot.message_handler(commands=['timer'])
-def summary_timer_delete(message):
-    try:
-        now = datetime.datetime.now()
-        time_now = now.strftime('%d/%m/%Y')
-        for x in collection_offer.find():
-            time_parse = datetime.datetime.strptime(x['time'], '%m/%d/%Y')
-            time = datetime.datetime.strftime(time_parse, '%m/%d/%Y')
-            print(time + datetime.timedelta(days=+755))
-            print(x['time_delete'])
-            print(datetime.datetime.strftime(x['time_delete'], "%d/%m/%Y") + datetime.timedelta(days=5))
-            collection_offer.delete_one({'_id': x['_id']})
-
-
-
-    except Exception as e:
-        print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
-
-
-@bot.message_handler(content_type=['text'])
-def bruch(message):
-    print('bruch')
-
-
 @bot.callback_query_handler(func=lambda call: True)
 def send_to_channel(call):
     try:
