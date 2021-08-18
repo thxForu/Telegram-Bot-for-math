@@ -947,6 +947,38 @@ def summary_contact_info_changes(message):
         bot.reply_to(message, 'біда')
 
 
+@bot.message_handler(commands=['cleaning'])
+def offer_timer_delete(message):
+    try:
+        now = datetime.datetime.now()
+        time_now = now.strftime('%d/%m/%Y')
+        for x in collection_offer.find():
+            time_parse = datetime.datetime.strptime(x['time'], '%d/%m/%Y')
+            time_delta = time_parse + datetime.timedelta(days=365)
+            time_delete = time_delta.strftime('%d/%m/%Y')
+            time_notification_process = time_parse + datetime.timedelta(days=358)
+            time_notification = time_notification_process.strftime('%d/%m/%Y')
+            if time_delete == time_now:
+                collection_offer.delete_one({'_id': x["_id"]})
+                bot.delete_message(chat_id=channelForOffer, message_id=x['message_id'])
+            elif time_notification == time_now:
+                bot.send_message(chat_id=x['user_id'], text='Через 7 календарних днів вашу вакансію буде видалено')
+        for x in collection_summary.find():
+            time_parse = datetime.datetime.strptime(x['time'], '%d/%m/%Y')
+            time_delta = time_parse + datetime.timedelta(days=365)
+            time_delete = time_delta.strftime('%d/%m/%Y')
+            time_notification_process = time_parse + datetime.timedelta(days=358)
+            time_notification = time_notification_process.strftime('%d/%m/%Y')
+            if time_delete == time_now:
+                collection_summary.delete_one({'_id': x["_id"]})
+                bot.delete_message(chat_id=channelForSummary, message_id=x['message_id'])
+            elif time_notification == time_now:
+                bot.send_message(chat_id=x['user_id'], text='Через 7 календарних днів ваше резюме буде видалено')
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'біда')
+
+
 @bot.message_handler(commands='timer')
 def summary_timer_delete(message):
     try:
@@ -1089,6 +1121,8 @@ def send_to_channel(call):
             time = now.strftime('%d/%m/%Y')
             link = bot.create_chat_invite_link(channelForSummary, member_limit=1)
             c = collection_offer.find_one({'user_id': int(user_id)})
+            time = datetime.datetime.now()
+            time_now = datetime.datetime.strftime(time, '%d/%m/%Y')
             print(user_id, chat_id)
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
@@ -1434,6 +1468,8 @@ def send_to_channel(call):
             time_now = now.strftime('%d/%m/%Y')
             link = bot.create_chat_invite_link(channelForOffer, member_limit=1)
             c = collection_summary.find_one({'user_id': int(user_id)})
+            time = datetime.datetime.now()
+            time_now = datetime.datetime.strftime(time, '%d/%m/%Y')
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
             student_button = types.InlineKeyboardButton(
@@ -1665,6 +1701,8 @@ def send_to_channel(call):
             time_now = now.strftime('%d/%m/%Y')
             link = bot.create_chat_invite_link(channelForOffer, member_limit=1)
             c = collection_summary.find_one({'user_id': str(user_id)})
+            time = datetime.datetime.now()
+            time_now = datetime.datetime.strftime(time, '%d/%m/%Y')
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
             keyboard = types.InlineKeyboardMarkup()
