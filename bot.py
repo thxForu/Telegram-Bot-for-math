@@ -947,8 +947,7 @@ def summary_contact_info_changes(message):
         bot.reply_to(message, 'біда')
 
 
-@bot.message_handler(commands=['cleaning'])
-def offer_timer_delete(message):
+def clean_collections():
     try:
         now = datetime.datetime.now()
         time_now = now.strftime('%d/%m/%Y')
@@ -976,10 +975,9 @@ def offer_timer_delete(message):
                 bot.send_message(chat_id=x['user_id'], text='Через 7 календарних днів ваше резюме буде видалено')
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
-@bot.message_handler(commands='timer')
+@bot.message_handler(commands=['timer'])
 def summary_timer_delete(message):
     try:
         now = datetime.datetime.now()
@@ -2070,6 +2068,6 @@ def check_connections_with_db():
         pprint(traceback.format_exc())
         print("Could not connect to MongoDB")
 
-
-check = check_connections_with_db()
-bot.polling(none_stop=True)
+if __name__=="__main__":
+    check = check_connections_with_db()
+    bot.polling(none_stop=True)
