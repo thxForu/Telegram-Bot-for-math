@@ -7,7 +7,7 @@ import traceback
 import pymongo
 import pprint
 from bson.objectid import ObjectId
-import time
+import datetime
 load_dotenv()
 
 bot = telebot.TeleBot('1870782408:AAFgZcSZCPTS_X9O0ckjUWbjr2FfhFjQTp4')
@@ -947,6 +947,31 @@ def summary_contact_info_changes(message):
         bot.reply_to(message, 'біда')
 
 
+@bot.message_handler(commands='timer')
+def summary_timer_delete(message):
+    try:
+        now = datetime.datetime.now()
+        time_now = now.strftime('%d/%m/%Y')
+        for x in collection_offer.find():
+            time_parse = datetime.datetime.strptime(x['time'], '%m/%d/%Y')
+            time = datetime.datetime.strftime(time_parse, '%m/%d/%Y')
+            print(time + datetime.timedelta(days=+755))
+            print(x['time_delete'])
+            print(datetime.datetime.strftime(x['time_delete'], "%d/%m/%Y") + datetime.timedelta(days=5))
+            collection_offer.delete_one({'_id': x['_id']})
+
+
+
+    except Exception as e:
+        print(traceback.format_exc())
+        bot.reply_to(message, 'біда')
+
+
+@bot.message_handler(content_type=['text'])
+def bruch(message):
+    print('bruch')
+
+
 @bot.callback_query_handler(func=lambda call: True)
 def send_to_channel(call):
     try:
@@ -1060,6 +1085,8 @@ def send_to_channel(call):
             data = call.data.split(',')
             chat_id = int(data[1])
             user_id = int(data[2])
+            now = datetime.datetime.now()
+            time = now.strftime('%d/%m/%Y')
             link = bot.create_chat_invite_link(channelForSummary, member_limit=1)
             c = collection_offer.find_one({'user_id': int(user_id)})
             print(user_id, chat_id)
@@ -1112,6 +1139,7 @@ def send_to_channel(call):
                 'salary': offer['salary'],
                 'description': offer['description'],
                 'contact_info': offer['contact_info'],
+                'time': time,
                 'message_id': message_offer_save.message_id
             }
             # Send offer to db
@@ -1136,6 +1164,8 @@ def send_to_channel(call):
             offer = collection_verification.find_one({'_id':  ObjectId("{}".format(obj))})
             link = bot.create_chat_invite_link(channelForSummary, member_limit=1)
             c = collection_offer.find_one({'user_id': int(user_id)})
+            now = datetime.datetime.now()
+            time_now = now.strftime('%d/%m/%Y')
             print(user_id, chat_id)
             bot.delete_message(chat_id=call.message.chat.id,
                                message_id=call.message.message_id)
@@ -1185,6 +1215,7 @@ def send_to_channel(call):
                 'salary': offer['salary'],
                 'description': offer['description'],
                 'contact_info': offer['contact_info'],
+                'time': time_now,
                 'message_id': message_offer_save.message_id
             }
             # Send offer to db
@@ -1399,6 +1430,8 @@ def send_to_channel(call):
             data = call.data.split(',')
             chat_id = int(data[1])
             user_id = int(data[2])
+            now = datetime.datetime.now()
+            time_now = now.strftime('%d/%m/%Y')
             link = bot.create_chat_invite_link(channelForOffer, member_limit=1)
             c = collection_summary.find_one({'user_id': int(user_id)})
             bot.delete_message(chat_id=call.message.chat.id,
@@ -1448,6 +1481,7 @@ def send_to_channel(call):
                 'contact_info': summary['contact_info'],
                 'direction': summary['direction'],
                 'email':  summary['email'],
+                'time': time_now,
                 'message_id': message_save.message_id
             }
             # Send offer to db
@@ -1627,6 +1661,8 @@ def send_to_channel(call):
             obj = data[2]
             summary = collection_verification.find_one({'_id': ObjectId("{}".format(obj))})
             print(user_id, chat_id)
+            now = datetime.datetime.now()
+            time_now = now.strftime('%d/%m/%Y')
             link = bot.create_chat_invite_link(channelForOffer, member_limit=1)
             c = collection_summary.find_one({'user_id': str(user_id)})
             bot.delete_message(chat_id=call.message.chat.id,
@@ -1676,6 +1712,7 @@ def send_to_channel(call):
                 'contact_info': summary['contact_info'],
                 'direction': summary['direction'],
                 'email':  summary['email'],
+                'time': time_now,
                 'message_id': message_save.message_id
             }
             # Send offer to db
