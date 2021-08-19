@@ -252,7 +252,7 @@ def offer_contact_info(message):
         markup = types.InlineKeyboardMarkup()
         personal_consent = types.InlineKeyboardButton(text="✅ Даю згоду", callback_data='offer_verefication' + ',' + str(chat_id))
         markup.add(personal_consent)
-        text = '[Згода на використання персональних даних:](https://drive.google.com/file/d/1Q2daCV6j8evlvJN--2_Z8WGZmii63s7S/view?usp=sharing)'
+        text = '[Згода на використання персональних даних:](https://drive.google.com/file/d/1FlgnpTUsEzFP7lmUcsYG5LB_lih1Dqg8/view?usp=sharing)'
         bot.send_message(chat_id, text=text, parse_mode='MarkdownV2', reply_markup=markup)
 
     except Exception as e:
@@ -975,6 +975,7 @@ def clean_collections():
                 bot.send_message(chat_id=x['user_id'], text='Через 7 календарних днів ваше резюме буде видалено')
     except Exception as e:
         print(traceback.format_exc())
+
 
 @bot.callback_query_handler(func=lambda call: True)
 def send_to_channel(call):
