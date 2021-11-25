@@ -443,7 +443,6 @@ def comp_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def vac_change_progress(message):
@@ -487,7 +486,6 @@ def vac_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def salary_change_progress(message):
@@ -529,7 +527,6 @@ def salary_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def description_change_progress(message):
@@ -571,7 +568,6 @@ def description_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def contact_info_change_progress(message):
@@ -613,8 +609,6 @@ def contact_info_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
-
 
 # Функції для редагування резюме
 
@@ -663,7 +657,6 @@ def n_a_m_e_change(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def age_change_progress(message):
@@ -710,7 +703,6 @@ def age_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def course_change_progress(message):
@@ -757,7 +749,6 @@ def course_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def pers_quali_change(message):
@@ -804,7 +795,6 @@ def pers_quali_change(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def another_change_progress(message):
@@ -851,7 +841,6 @@ def another_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def experience_change_progress(message):
@@ -898,7 +887,6 @@ def experience_change_progress(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def summary_contact_info_changes(message):
@@ -944,7 +932,6 @@ def summary_contact_info_changes(message):
 
     except Exception as e:
         print(traceback.format_exc())
-        bot.reply_to(message, 'біда')
 
 
 def clean_collections():
@@ -1465,15 +1452,15 @@ def send_to_channel(call):
 
             message_save = bot.send_message(chat_id=channelForSummary, text='Прізвище, ім’я, по батькові:' + summary['name']
                              + '\nВік: ' + summary['age']
-                             + '\nФакультет:' + summary['faculty']
-                             + '\nСпеціальність:' + summary['specialty']
-                             + '\nКурс:' + summary['course']
-                             + '\nЗнання англійської мови:' + summary['english_know_lvl']
-                             + '\nОсобисті якості:' + summary['personal_qualities']
-                             + '\nІнші навички:' + summary['another']
-                             + '\nДосвід роботи:' + summary['experience']
-                             + '\nКонтактний телефон:' + summary['contact_info']
-                             + '\nАдреса електронної пошти:' + summary['email'])
+                             + '\nФакультет: ' + summary['faculty']
+                             + '\nСпеціальність: ' + summary['specialty']
+                             + '\nКурс: ' + summary['course']
+                             + '\nЗнання англійської мови: ' + summary['english_know_lvl']
+                             + '\nОсобисті якості: ' + summary['personal_qualities']
+                             + '\nІнші навички: ' + summary['another']
+                             + '\nДосвід роботи: ' + summary['experience']
+                             + '\nКонтактний телефон: ' + summary['contact_info']
+                             + '\nАдреса електронної пошти: ' + summary['email'])
 
             check_connections_with_db()
             summary_to_db = {
