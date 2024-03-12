@@ -10,7 +10,7 @@ from bson.objectid import ObjectId
 import datetime
 load_dotenv()
 
-bot = telebot.TeleBot('1870782408:AAFgZcSZCPTS_X9O0ckjUWbjr2FfhFjQTp4')
+bot = telebot.TeleBot('BOT_TOKEN')
 
 
 class Offer:
